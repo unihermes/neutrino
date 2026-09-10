@@ -63,9 +63,19 @@ fi
 
 log "linking dotfiles"
 mkdir -p "$HOME/.config"
-if ! (cd dotfiles && stow -t "$HOME" -R -- */); then
-  die "stow refused to link. A real file or directory is probably in the way;
-      move the conflicting path out of ~/.config and rerun."
+# Enumerate the packages explicitly rather than passing a `*/` glob. Two traps
+# there: stow collects package names during option parsing, so a `--` before
+# them terminates parsing and leaves stow with an empty list ("No packages to
+# stow or unstow"), and `*/` hands it names with trailing slashes.
+mapfile -t stow_pkgs < <(find dotfiles -mindepth 1 -maxdepth 1 -type d -printf '%f
+' | sort)
+if (( ${#stow_pkgs[@]} == 0 )); then
+  die "no package directories found under dotfiles/"
+fi
+log "  ${stow_pkgs[*]}"
+if ! (cd dotfiles && stow -t "$HOME" -R "${stow_pkgs[@]}"); then
+  die "stow failed; see its output above. If it names a conflict, move that
+      real file or directory out of ~/.config and rerun."
 fi
 
 log "applying system settings"
