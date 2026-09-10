@@ -55,6 +55,13 @@ without reinstalling Arch.
 ./strip.sh --apply    # asks you to type STRIP, then does it
 ```
 
+If a candidate turns out to be required by a package that is staying, pacman
+refuses the whole transaction. `strip.sh` reads the name out of that error,
+drops it from the removal set and asks again, repeating until pacman is
+satisfied -- so a dependency you did not think of does not stop the run. It
+reports everything it rescued. That is recomputed on every run and does not
+need saving.
+
 Edit `packages/keep.txt` before running. It protects the kernel, the boot
 path, NetworkManager, sudo and git by default, and a built-in list refuses to
 remove those regardless. **If this machine uses iwd, dhcpcd or a bootloader

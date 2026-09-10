@@ -36,21 +36,66 @@ for pkg in "${explicit[@]}"; do
   remove+=("$pkg")
 done
 
+# Ask pacman to resolve the set, and rescue whatever it objects to.
+#
+# A package on the remove list may turn out to be required by one that is
+# staying. pacman rejects the whole transaction when that happens, naming the
+# offender as "removing X breaks dependency 'Y' required by Z". Rather than
+# giving up and making you edit keep.txt by hand, pull X out of the removal set
+# and ask again. Each pass can expose blockers hidden behind the last, so this
+# repeats until pacman is satisfied.
+rescued=()
+txn=""
+if (( ${#remove[@]} > 0 )); then
+  log "${#remove[@]} explicitly-installed packages are candidates for removal"
+  pass=0
+  while (( ${#remove[@]} > 0 )); do
+    # The real removal is -Rns, but pacman rejects --nosave alongside --print,
+    # so the preview drops the -n. It makes no difference to which packages are
+    # listed: --nosave only controls whether owned config files are kept as
+    # .pacsave, and --print resolves the same dependency set either way.
+    if txn=$(sudo pacman -Rs --print "${remove[@]}" 2>&1); then
+      break
+    fi
+
+    mapfile -t blockers < <(
+      sed -n "s/.*removing \([^ ]*\) breaks dependency.*/\1/p" <<<"$txn" | sort -u
+    )
+    if (( ${#blockers[@]} == 0 )); then
+      printf '%s\n' "$txn" >&2
+      die "pacman refused this set for a reason this script cannot parse.
+      The output above is the whole error."
+    fi
+    if (( ++pass > 20 )); then
+      die "still unresolved after 20 passes, giving up rather than looping."
+    fi
+
+    kept=()
+    for pkg in "${remove[@]}"; do
+      [[ " ${blockers[*]} " == *" $pkg "* ]] || kept+=("$pkg")
+    done
+    remove=("${kept[@]}")
+    rescued+=("${blockers[@]}")
+    log "keeping ${blockers[*]} -- needed by a package that is staying"
+  done
+fi
+
 if (( ${#remove[@]} == 0 )); then
-  log "nothing to remove, this system is already at base"
+  log "nothing left to remove, this system is already at base"
 else
-  log "${#remove[@]} explicitly-installed packages would go:"
+  log "${#remove[@]} packages would go:"
   printf '   %s\n' "${remove[@]}"
   echo
   log "with dependencies, the full transaction is:"
-  # The real removal is -Rns, but pacman rejects --nosave alongside --print, so
-  # the preview drops the -n. It makes no difference to which packages are
-  # listed: --nosave only controls whether owned config files are kept as
-  # .pacsave, and --print resolves the same dependency set either way.
-  if ! sudo pacman -Rs --print "${remove[@]}"; then
-    die "pacman refuses this set, usually because something you kept needs one
-      of them. Add the name it complains about to packages/keep.txt and rerun."
-  fi
+  printf '%s\n' "$txn"
+fi
+
+if (( ${#rescued[@]} > 0 )); then
+  echo
+  warn "${#rescued[@]} rescued automatically, something kept depends on them:"
+  printf '   %s\n' "${rescued[@]}"
+  warn "this is worked out fresh on every run, so nothing needs saving. Add"
+  warn "them to packages/keep.txt anyway if you want the decision recorded."
 fi
 
 # Symlinks into this repo. Removing a link never touches the repo file.
