@@ -32,12 +32,34 @@ if ! command -v yay &>/dev/null; then
 fi
 yay --version >/dev/null || die "yay bootstrap failed"
 
+# Read a package list into an array. NOT `| xargs`: xargs points its child's
+# stdin at /dev/null, so any package manager that stops to ask a question
+# reads EOF and aborts instead. That silently killed the whole AUR step.
+read_list() {
+  local -n _out=$1
+  mapfile -t _out < <(list "$2")
+}
+
 log "installing repo packages"
-list packages/pacman.txt | xargs -r sudo pacman -S --needed --noconfirm
+read_list pacman_pkgs packages/pacman.txt
+if (( ${#pacman_pkgs[@]} > 0 )); then
+  sudo pacman -S --needed --noconfirm "${pacman_pkgs[@]}"
+fi
 
 log "installing AUR packages"
-# Not --noconfirm: you want to see the PKGBUILD diffs.
-list packages/aur.txt | xargs -r yay -S --needed
+# Not --noconfirm: you want to see the PKGBUILD diffs before anything builds.
+# --answerclean None only skips the "rebuild from scratch?" prompt; diffs and
+# the install confirmation still stop for you.
+aur_failed=0
+read_list aur_pkgs packages/aur.txt
+if (( ${#aur_pkgs[@]} > 0 )); then
+  yay -S --needed --answerclean None "${aur_pkgs[@]}" || aur_failed=1
+fi
+# An AUR build breaking should not stop dotfiles and services from being set
+# up. It gets reported again at the end so it cannot be missed.
+if (( aur_failed )); then
+  warn "one or more AUR packages failed, continuing"
+fi
 
 log "linking dotfiles"
 mkdir -p "$HOME/.config"
@@ -81,6 +103,11 @@ log "verifying font and icon names actually resolve"
 fc-match sans-serif
 fc-match monospace
 [[ -d /usr/share/icons/kora ]] || warn "kora icon theme not found in /usr/share/icons"
+
+if (( aur_failed )); then
+  warn "AUR packages did not all install. Rerun ./install.sh, or install the"
+  warn "failures one at a time with: yay -S <name>"
+fi
 
 cat <<'EOF'
 
