@@ -43,9 +43,11 @@ else
   printf '   %s\n' "${remove[@]}"
   echo
   log "with dependencies, the full transaction is:"
-  # -Rns pulls unneeded deps and removes config files it owns. --print shows
-  # the real blast radius, which is always larger than the list above.
-  if ! sudo pacman -Rns --print "${remove[@]}"; then
+  # The real removal is -Rns, but pacman rejects --nosave alongside --print, so
+  # the preview drops the -n. It makes no difference to which packages are
+  # listed: --nosave only controls whether owned config files are kept as
+  # .pacsave, and --print resolves the same dependency set either way.
+  if ! sudo pacman -Rs --print "${remove[@]}"; then
     die "pacman refuses this set, usually because something you kept needs one
       of them. Add the name it complains about to packages/keep.txt and rerun."
   fi
