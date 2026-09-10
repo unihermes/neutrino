@@ -22,11 +22,25 @@ Every step is idempotent. `--needed` skips installed packages, `stow -R`
 restows cleanly, `enable --now` is a no-op on an already-running unit. Safe to
 rerun as many times as you like.
 
+## Dotfiles only
+
+`link.sh` does step 4 and nothing else -- no packages, no services, no sudo.
+Use it on a machine where you only want the configs, or to relink after adding
+a new directory under `dotfiles/`. It dry-runs first, so a conflict is reported
+before anything on disk is touched.
+
+```bash
+./link.sh
+```
+
+`install.sh` calls it rather than duplicating the logic.
+
 ## Layout
 
 ```
 neutrino/
 ├── install.sh
+├── link.sh              # dotfiles only, no packages or services
 ├── packages/
 │   ├── pacman.txt        # native, one per line, # comments allowed
 │   └── aur.txt
