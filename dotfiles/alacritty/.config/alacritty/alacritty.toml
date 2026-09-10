@@ -1,0 +1,34 @@
+# Neutrino - Alacritty
+# ~/.config/alacritty/alacritty.toml
+
+[window]
+padding = { x = 8, y = 8 }
+opacity = 0.95
+decorations = "none"
+
+[font]
+size = 11.0
+normal = { family = "UbuntuMono Nerd Font", style = "Regular" }
+bold   = { family = "UbuntuMono Nerd Font", style = "Bold" }
+italic = { family = "UbuntuMono Nerd Font", style = "Italic" }
+
+[cursor]
+# Beam, not Block: a thin vertical bar sitting between characters rather than a
+# filled rectangle painted over the one under it.
+style = { shape = "Beam", blinking = "On" }
+# Default 0.15 is nearly invisible on a beam at this font size.
+thickness = 0.25
+# When the window loses focus the cursor becomes a hollow box, so you can
+# tell at a glance which terminal actually has keyboard input.
+unfocused_hollow = true
+
+[colors.primary]
+background = "#1e1e2e"
+foreground = "#cdd6f4"
+
+[colors.cursor]
+cursor = "#f5e0dc"
+text   = "#1e1e2e"
+
+[scrolling]
+history = 10000

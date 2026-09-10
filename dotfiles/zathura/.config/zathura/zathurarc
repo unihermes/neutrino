@@ -1,0 +1,23 @@
+# Neutrino - zathura
+# ~/.config/zathura/zathurarc
+
+set font "UbuntuMono Nerd Font 11"
+set selection-clipboard clipboard
+set adjust-open width
+set guioptions ""
+set statusbar-home-tilde true
+
+# dark, matching the gtk theme
+set recolor true
+set recolor-keephue true
+set default-bg   "#1e1e2e"
+set default-fg   "#cdd6f4"
+set statusbar-bg "#11111b"
+set statusbar-fg "#cdd6f4"
+set inputbar-bg  "#11111b"
+set inputbar-fg  "#cdd6f4"
+set highlight-color        "#f9e2af"
+set highlight-active-color "#89b4fa"
+
+# toggle the dark inversion
+map <C-i> recolor

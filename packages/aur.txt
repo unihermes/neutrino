@@ -1,0 +1,22 @@
+# AUR packages. One per line, # comments allowed.
+# Regenerate from a known-good system with:  pacman -Qqem > packages/aur.txt
+#
+# NOTE: read the PKGBUILD diff yay shows you. The legitimate Zen package is
+# zen-browser-bin. zen-browser-PATCHED-bin was malware.
+
+quickshell-git
+
+# editor. vscodium-bin is the prebuilt binary; plain `vscodium` compiles
+# Electron from source and takes hours. Add vscodium-bin-marketplace if you
+# want the Microsoft extension marketplace instead of Open VSX.
+vscodium-bin
+
+# Claude Code CLI. Verify the name on the real system first:
+#   yay -Ss claude-code
+# If neither claude-code nor claude-code-bin is there, drop this line and use
+# the official installer instead:
+#   curl -fsSL https://claude.ai/install.sh | bash
+claude-code
+zen-browser-bin
+floorp-bin
+kora-icon-theme

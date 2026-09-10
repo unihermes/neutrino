@@ -1,0 +1,76 @@
+# Repo (native) packages. One per line, # comments allowed.
+# Regenerate from a known-good system with:  pacman -Qqen > packages/pacman.txt
+
+# base tooling
+neovim
+alacritty
+stow
+git
+openssh
+man-db
+unzip
+wget
+xdg-user-dirs
+fastfetch
+
+# compositor + session
+hyprland
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+polkit-kde-agent
+
+# qt runtime (quickshell)
+qt6-wayland
+qt6-declarative
+qt6-svg
+qt6-shadertools
+qt6-5compat
+qt6ct
+
+# audio
+pipewire
+pipewire-pulse
+wireplumber
+pavucontrol
+
+# file manager + its extras
+thunar
+thunar-volman
+thunar-archive-plugin
+gvfs
+gvfs-mtp
+tumbler
+ffmpegthumbnailer
+xarchiver
+
+# wayland utilities
+wl-clipboard
+grim
+slurp
+brightnessctl
+
+# gtk + theming
+gtk3
+gtk4
+nwg-look
+adwaita-icon-theme
+hicolor-icon-theme
+gtk-update-icon-cache
+
+# fonts
+ttf-ubuntu-nerd
+ttf-ubuntu-mono-nerd
+noto-fonts
+noto-fonts-emoji
+
+# pdf viewer
+# zathura is keyboard-driven and vim-keyed, which matches the rest of the
+# stack. It is useless without a rendering plugin; mupdf is the fast one.
+zathura
+zathura-pdf-mupdf
+
+# apps
+obsidian
+
+# vm guest integration
+open-vm-tools

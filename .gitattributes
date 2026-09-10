@@ -1,0 +1,6 @@
+# This repo is authored on Windows and consumed on Linux. Force LF so that
+# install.sh does not arrive with CRLF and die with "bad interpreter".
+* text=auto eol=lf
+*.sh  text eol=lf
+*.png binary
+*.jpg binary

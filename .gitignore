@@ -1,0 +1,11 @@
+# stow leftovers
+.stow-local-ignore
+
+# editor / os cruft
+*.swp
+.DS_Store
+Thumbs.db
+
+# nvim state that should never be committed
+dotfiles/nvim/.config/nvim/lazy-lock.json.bak
+dotfiles/nvim/.local/
