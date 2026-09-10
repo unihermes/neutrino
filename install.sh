@@ -105,6 +105,13 @@ fi
 # on the next boot instead.
 if have_unit ly.service; then
   sudo systemctl enable ly.service
+  # Enabling a greeter is not enough on its own. archinstall's Minimal profile
+  # leaves the default target at multi-user.target, which never pulls in
+  # display-manager.service, so ly stays enabled and never actually starts.
+  if [[ $(systemctl get-default) != graphical.target ]]; then
+    log "switching default boot target to graphical.target"
+    sudo systemctl set-default graphical.target
+  fi
 else
   warn "ly.service not found, nothing will start a graphical session at boot"
 fi
