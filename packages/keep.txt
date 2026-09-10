@@ -1,0 +1,34 @@
+# Packages strip.sh will never remove, on top of its built-in protected list.
+# One per line, # comments allowed.
+#
+# The rule of thumb: if losing it means you cannot boot, cannot get online, or
+# cannot re-clone this repo, it belongs here. Everything else is replaceable by
+# install.sh.
+#
+# Names that are not installed are simply ignored, so it is safe to list every
+# kernel and microcode variant.
+
+# the base meta-package: pacman refuses to remove anything it depends on
+base
+
+# kernel and boot
+linux
+linux-lts
+linux-firmware
+mkinitcpio
+efibootmgr
+intel-ucode
+amd-ucode
+
+# without these you cannot repair the system or fetch the repo again
+sudo
+networkmanager
+git
+
+# a text editor that does not need a GUI
+nano
+
+# If this machine uses something other than NetworkManager, add it here before
+# running: systemd-networkd is part of systemd, but iwd and dhcpcd are not.
+# iwd
+# dhcpcd

@@ -42,12 +42,34 @@ what you wrote.
 
 `install.sh` calls it rather than duplicating the logic.
 
+## Stripping a system back to base
+
+`strip.sh` removes every explicitly-installed package that is not on the keep
+list, then orphaned dependencies, then this repo's dotfile symlinks. It is for
+turning a machine that has accumulated things into one install.sh can
+provision from a known state -- the same starting point as a fresh snapshot,
+without reinstalling Arch.
+
+```bash
+./strip.sh            # dry run, prints the full transaction, changes nothing
+./strip.sh --apply    # asks you to type STRIP, then does it
+```
+
+Edit `packages/keep.txt` before running. It protects the kernel, the boot
+path, NetworkManager, sudo and git by default, and a built-in list refuses to
+remove those regardless. **If this machine uses iwd, dhcpcd or a bootloader
+package like grub, add it to keep.txt first** -- removing your only network
+daemon leaves you with no way to reinstall anything.
+
+It does not touch `/etc`, home directories, or anything not owned by pacman.
+
 ## Layout
 
 ```
 neutrino/
 ├── install.sh
 ├── link.sh              # dotfiles only, no packages or services
+├── strip.sh             # roll a system back to base Arch
 ├── packages/
 │   ├── pacman.txt        # native, one per line, # comments allowed
 │   └── aur.txt
