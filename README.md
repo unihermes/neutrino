@@ -26,8 +26,15 @@ rerun as many times as you like.
 
 `link.sh` does step 4 and nothing else -- no packages, no services, no sudo.
 Use it on a machine where you only want the configs, or to relink after adding
-a new directory under `dotfiles/`. It dry-runs first, so a conflict is reported
-before anything on disk is touched.
+a new directory under `dotfiles/`.
+
+Apps write their own config when none exists -- Hyprland regenerates
+`~/.config/hypr/hyprland.conf` on every start without one -- and that real file
+then blocks stow from linking yours, so the app goes on reading its own default
+and your repo config is never used. `link.sh` moves such files into a
+timestamped `~/.config-backup-*` first. Nothing is deleted. This is the safe
+inverse of `stow --adopt`, which would pull the app's file into the repo over
+what you wrote.
 
 ```bash
 ./link.sh

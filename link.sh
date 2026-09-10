@@ -21,12 +21,34 @@ mkdir -p "$HOME/.config"
 mapfile -t stow_pkgs < <(find dotfiles -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
 (( ${#stow_pkgs[@]} > 0 )) || die "no package directories found under dotfiles/"
 
-# --simulate first, so a conflict is reported before anything is touched.
-if ! (cd dotfiles && stow -t "$HOME" -R --simulate "${stow_pkgs[@]}") 2>/dev/null; then
-  log "conflicts found, showing what stow objects to:"
-  (cd dotfiles && stow -t "$HOME" -R --simulate "${stow_pkgs[@]}") || true
-  die "move the real files named above out of the way, then rerun."
-fi
+# Move real files out of the way before stowing. Apps write their own configs
+# when none exist -- Hyprland regenerates ~/.config/hypr/hyprland.conf on every
+# start without one -- and that file then blocks stow from linking ours, so the
+# app keeps reading its own default forever. Nothing is deleted: conflicts go
+# to a timestamped backup. This is the safe version of `stow --adopt`, which
+# would instead pull the app's file into the repo over what you wrote.
+backup_conflicts() {
+  local backup="$HOME/.config-backup-$(date +%Y%m%d-%H%M%S)"
+  local pkg src rel target moved=0
+  for pkg in "${stow_pkgs[@]}"; do
+    while IFS= read -r -d "" src; do
+      rel=${src#"dotfiles/$pkg/"}
+      target="$HOME/$rel"
+      # A symlink is either already ours or stow's to replace. Only a real
+      # file is a genuine conflict.
+      if [[ -f $target && ! -L $target ]]; then
+        mkdir -p "$backup/$(dirname "$rel")"
+        mv "$target" "$backup/$rel"
+        log "  displaced $rel"
+        moved=1
+      fi
+    done < <(find "dotfiles/$pkg" -type f -print0)
+  done
+  (( moved )) && log "originals saved in $backup"
+  return 0
+}
+
+backup_conflicts
 
 log "linking: ${stow_pkgs[*]}"
 (cd dotfiles && stow -t "$HOME" -R "${stow_pkgs[@]}")
