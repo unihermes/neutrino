@@ -16,7 +16,7 @@ cd neutrino
 3. Installs everything in `packages/pacman.txt` and `packages/aur.txt`
 4. Symlinks `dotfiles/` into `$HOME` with GNU stow
 5. Rebuilds font and icon caches, sets Thunar as the directory handler
-6. Enables NetworkManager, pipewire, and the VMware guest tools
+6. Enables NetworkManager, pipewire, the VMware guest tools, and the ly greeter
 
 Every step is idempotent. `--needed` skips installed packages, `stow -R`
 restows cleanly, `enable --now` is a no-op on an already-running unit. Safe to
@@ -47,16 +47,22 @@ Because they are symlinks, editing a config on the live system edits the repo.
 
 ## Starting a session
 
-The Minimal archinstall profile ships no display manager, so log in on a TTY
-and start the compositor by hand:
+The Minimal archinstall profile ships no display manager, so this repo installs
+`ly`, a TUI greeter. `install.sh` enables it but does not start it, because ly
+seizes a VT and would kill the install mid-run. Reboot and it greets you; pick
+Hyprland from the session list with the arrow keys.
+
+If Hyprland dies on VMware's virtual GPU you get dumped back at the greeter
+with no error shown. Switch to a TTY with `ctrl+alt+F2` and run it by hand to
+see what actually happened:
 
 ```bash
 Hyprland
+tail -40 ~/.local/share/hyprland/hyprland.log
 ```
 
-If it dies immediately on VMware's virtual GPU, uncomment the software
-rendering env lines at the top of `~/.config/hypr/hyprland.conf`, one block at
-a time, and read `~/.local/share/hyprland/hyprland.log`.
+Then uncomment the software rendering env lines at the top of
+`~/.config/hypr/hyprland.conf`, one block at a time.
 
 ## Regenerating the package lists
 

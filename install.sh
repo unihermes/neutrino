@@ -58,10 +58,23 @@ log "enabling services"
 sudo systemctl enable --now NetworkManager
 systemctl --user enable --now pipewire pipewire-pulse wireplumber
 
+# `systemctl cat` exits non-zero on a missing unit; `list-unit-files` does not,
+# so it is the wrong test for "is this installed".
+have_unit() { systemctl cat "$1" &>/dev/null; }
+
 # VMware guest integration: clipboard sharing, resolution, drag and drop.
-if systemctl list-unit-files vmtoolsd.service &>/dev/null; then
+if have_unit vmtoolsd.service; then
   sudo systemctl enable --now vmtoolsd.service
   sudo systemctl enable --now vmware-vmblock-fuse.service || true
+fi
+
+# Display manager. Deliberately NOT --now: ly takes over a VT, and starting it
+# here would pull the terminal out from under this script mid-run. It comes up
+# on the next boot instead.
+if have_unit ly.service; then
+  sudo systemctl enable ly.service
+else
+  warn "ly.service not found, nothing will start a graphical session at boot"
 fi
 
 log "verifying font and icon names actually resolve"
@@ -71,13 +84,16 @@ fc-match monospace
 
 cat <<'EOF'
 
-done.
+done. reboot, and ly will greet you -- pick Hyprland from the session list
+with the left/right arrow keys.
 
-There is no display manager on a Minimal install, so log in on a TTY and start
-the session by hand:
+If Hyprland fails to start on VMware's virtual GPU you will land back at the
+greeter with no explanation. Drop to a TTY with ctrl+alt+F2, log in, and run
+Hyprland by hand to see the actual error:
 
     Hyprland
+    tail -40 ~/.local/share/hyprland/hyprland.log
 
-If it fails to start on VMware's virtual GPU, uncomment the software-rendering
-env lines at the top of ~/.config/hypr/hyprland.conf and try again.
+Then uncomment the software-rendering env lines at the top of
+~/.config/hypr/hyprland.conf, one block at a time.
 EOF

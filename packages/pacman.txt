@@ -14,6 +14,11 @@ xdg-user-dirs
 fastfetch
 
 # compositor + session
+# ly is a TUI greeter that reads the wayland-sessions entry hyprland ships,
+# so Hyprland shows up as a choice with no extra config. If pacman cannot
+# find it, check `pacman -Ss ly` -- it moved from the AUR into extra, and on
+# an older mirror you may need it from the AUR instead.
+ly
 hyprland
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
