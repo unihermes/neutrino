@@ -91,8 +91,11 @@ sudo systemctl enable --now NetworkManager
 systemctl --user enable --now pipewire pipewire-pulse wireplumber
 
 # `systemctl cat` exits non-zero on a missing unit; `list-unit-files` does not,
-# so it is the wrong test for "is this installed".
-have_unit() { systemctl cat "$1" &>/dev/null; }
+# so it is the wrong test for "is this installed". The file check is a fallback
+# for template units, which some systemd versions will not `cat`.
+have_unit() {
+  systemctl cat "$1" &>/dev/null     || [[ -f /usr/lib/systemd/system/$1 || -f /etc/systemd/system/$1 ]]
+}
 
 # VMware guest integration: clipboard sharing, resolution, drag and drop.
 if have_unit vmtoolsd.service; then
@@ -103,8 +106,22 @@ fi
 # Display manager. Deliberately NOT --now: ly takes over a VT, and starting it
 # here would pull the terminal out from under this script mid-run. It comes up
 # on the next boot instead.
-if have_unit ly.service; then
-  sudo systemctl enable ly.service
+# ly 1.x ships a templated unit that has to be bound to a VT (ly@tty2.service);
+# 0.x shipped a plain ly.service. Detect rather than guess.
+dm_unit=""
+if have_unit ly@.service; then
+  dm_unit="ly@tty2.service"
+elif have_unit ly.service; then
+  dm_unit="ly.service"
+fi
+
+if [[ -n $dm_unit ]]; then
+  sudo systemctl enable "$dm_unit"
+  # ly owns the VT it runs on, so the getty there has to go or the two fight
+  # over tty2 and you get a garbled or flickering greeter.
+  if [[ $dm_unit == ly@* ]]; then
+    sudo systemctl disable getty@tty2.service &>/dev/null || true
+  fi
   # Enabling a greeter is not enough on its own. archinstall's Minimal profile
   # leaves the default target at multi-user.target, which never pulls in
   # display-manager.service, so ly stays enabled and never actually starts.
@@ -113,7 +130,8 @@ if have_unit ly.service; then
     sudo systemctl set-default graphical.target
   fi
 else
-  warn "ly.service not found, nothing will start a graphical session at boot"
+  warn "no ly unit found. Units the package ships:"
+  pacman -Ql ly 2>/dev/null | grep '\.service$' || warn "  (none)"
 fi
 
 log "verifying font and icon names actually resolve"
