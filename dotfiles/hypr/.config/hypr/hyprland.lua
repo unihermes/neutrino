@@ -34,11 +34,15 @@ local menu        = "pkill wofi || wofi --show drun"
 -- Empty output matches every display, which is what you want on a laptop that
 -- gets docked. `hyprctl monitors` for real names when you need a per-display
 -- rule.
+-- scale 1 is native resolution: everything as small as the panel can draw it.
+-- "auto" picks a HiDPI factor on a dense laptop panel, which makes the whole
+-- desktop look oversized. Nudge to 1.25 or 1.5 if 1 is too small; fractional
+-- values below 1 are not supported.
 hl.monitor({
     output   = "",
     mode     = "preferred",
     position = "auto",
-    scale    = "auto",
+    scale    = 1,
 })
 
 -------------------------------
@@ -150,8 +154,9 @@ hl.config({
             natural_scroll       = true,
             disable_while_typing = true,
             scroll_factor        = 0.6,
-            -- spelled with dashes, which is not a bare Lua identifier
-            ["tap-to-click"]     = true,
+            -- the .conf spelling is tap-to-click; the lua schema takes the
+            -- underscored form, since dashes are not a bare Lua identifier
+            tap_to_click         = true,
         },
     },
 })
@@ -181,7 +186,11 @@ hl.bind(mod .. " + F",       hl.dsp.exec_cmd(floorp))
 -- window management
 -- fullscreen and float sit on SHIFT, since plain F and V launch apps
 hl.bind(mod .. " + Q",         hl.dsp.window.close())
-hl.bind(mod .. " + SHIFT + F", hl.dsp.window.fullscreen())
+-- Two different things, deliberately on separate binds:
+--   maximize  fills the usable area, stopping below the Quickshell bar
+--   fullscreen covers the entire output, bar included
+hl.bind(mod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "maximize" }))
+hl.bind(mod .. " + CTRL + F",  hl.dsp.window.fullscreen())
 hl.bind(mod .. " + SHIFT + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mod .. " + SHIFT + E", hl.dsp.exit())
 hl.bind(mod .. " + P",         hl.dsp.window.pseudo())
