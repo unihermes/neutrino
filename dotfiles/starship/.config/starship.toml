@@ -1,0 +1,43 @@
+# Neutrino - Starship
+# ~/.config/starship.toml
+#
+# Same grayscale ramp as the rest of the repo -- no hues, emphasis is
+# lightness and weight instead. Error draws the eye by being bold and
+# bright rather than red; a clean prompt stays plain.
+#   #0b0b0b base   #121212 bar    #1a1a1a surface  #242424 overlay
+#   #303030 border #4d4d4d muted  #7a7a7a subtext  #c2c2c2 text
+#   #ebebeb bright
+
+format = """
+$directory\
+$git_branch\
+$git_status\
+$line_break\
+$character"""
+
+palette = "neutrino"
+
+[palettes.neutrino]
+muted   = "#4d4d4d"
+subtext = "#7a7a7a"
+text    = "#c2c2c2"
+bright  = "#ebebeb"
+
+[directory]
+style = "bold bright"
+format = "[$path]($style) "
+truncation_length = 0
+truncate_to_repo = false
+
+[git_branch]
+style = "subtext"
+symbol = " "
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style = "muted"
+format = "[$all_status$ahead_behind]($style) "
+
+[character]
+success_symbol = "[❯](text)"
+error_symbol = "[❯](bold bright)"

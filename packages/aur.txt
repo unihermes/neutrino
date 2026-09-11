@@ -27,3 +27,12 @@ kora-icon-theme
 #   yay -Ss bibata
 #   ls /usr/share/icons | grep -i bibata
 bibata-cursor-theme-bin
+
+# apps
+spotify
+claude-desktop
+
+# Discord client mod. Read the PKGBUILD before trusting any Discord mod, same
+# as the zen-browser warning above -- these packages run arbitrary code
+# inside your Discord client.
+equicord

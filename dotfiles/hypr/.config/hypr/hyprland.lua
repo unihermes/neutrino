@@ -58,9 +58,9 @@ hl.env("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
 hl.env("GDK_BACKEND", "wayland,x11")
 hl.env("MOZ_ENABLE_WAYLAND", "1")
 hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
-hl.env("XCURSOR_SIZE", "24")
+hl.env("XCURSOR_SIZE", "20")
 hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Classic")
-hl.env("HYPRCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_SIZE", "20")
 
 -------------------
 ---- AUTOSTART ----
@@ -70,7 +70,9 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("/usr/lib/polkit-kde-authentication-agent-1")
     hl.exec_cmd("quickshell")
     -- env alone does not retheme the cursor Hyprland draws over the desktop
-    hl.exec_cmd("hyprctl setcursor Bibata-Modern-Classic 24")
+    hl.exec_cmd("hyprctl setcursor Bibata-Modern-Classic 20")
+    -- picks a random wallpaper from wallpapers/ via swaybg
+    hl.exec_cmd("~/.config/hypr/random-wallpaper.sh")
 end)
 
 -----------------------
@@ -79,12 +81,12 @@ end)
 
 hl.config({
     general = {
-        gaps_in     = 5,
-        gaps_out    = 10,
-        border_size = 2,
+        gaps_in     = 3,
+        gaps_out    = 6,
+        border_size = 1,
 
         col = {
-            active_border   = "rgba(ebebebcc)",
+            active_border   = "rgba(c2c2c266)",
             inactive_border = "rgba(303030aa)",
         },
 
@@ -94,7 +96,7 @@ hl.config({
     },
 
     decoration = {
-        rounding         = 6,
+        rounding         = 3,
         rounding_power   = 2,
         active_opacity   = 1.0,
         inactive_opacity = 0.96,
@@ -133,12 +135,13 @@ hl.config({
 
 hl.curve("neutrino", { type = "bezier", points = { {0.22, 1}, {0.36, 1} } })
 
-hl.animation({ leaf = "global",     enabled = true, speed = 6, bezier = "neutrino" })
-hl.animation({ leaf = "border",     enabled = true, speed = 6, bezier = "neutrino" })
-hl.animation({ leaf = "windows",    enabled = true, speed = 4, bezier = "neutrino", style = "popin 92%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 3, bezier = "neutrino", style = "popin 92%" })
-hl.animation({ leaf = "fade",       enabled = true, speed = 3, bezier = "neutrino" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "neutrino", style = "slidefade 12%" })
+-- speed is in 100ms units (3 = 300ms), so lower is faster
+hl.animation({ leaf = "global",     enabled = true, speed = 3, bezier = "neutrino" })
+hl.animation({ leaf = "border",     enabled = true, speed = 3, bezier = "neutrino" })
+hl.animation({ leaf = "windows",    enabled = true, speed = 2, bezier = "neutrino", style = "popin 92%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.5, bezier = "neutrino", style = "popin 92%" })
+hl.animation({ leaf = "fade",       enabled = true, speed = 1.5, bezier = "neutrino" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 2, bezier = "neutrino", style = "slidefade 12%" })
 
 ---------------
 ---- INPUT ----
@@ -146,18 +149,25 @@ hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "neutrin
 
 hl.config({
     input = {
-        kb_layout    = "us",
-        follow_mouse = 1,
-        sensitivity  = 0,
+        kb_layout     = "us",
+        follow_mouse  = 1,
+        sensitivity   = 0.1,
+        accel_profile = "adaptive",
 
         touchpad = {
-            natural_scroll       = true,
+            natural_scroll       = false,
             disable_while_typing = true,
             scroll_factor        = 0.6,
             -- the .conf spelling is tap-to-click; the lua schema takes the
             -- underscored form, since dashes are not a bare Lua identifier
             tap_to_click         = true,
         },
+    },
+
+    -- stops the cursor from jumping to whatever gets focused, e.g. the
+    -- Quickshell workspace bar's click-to-focus icons
+    cursor = {
+        no_warps = true,
     },
 })
 
@@ -191,6 +201,8 @@ hl.bind(mod .. " + Q",         hl.dsp.window.close())
 --   fullscreen covers the entire output, bar included
 hl.bind(mod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "maximized" }))
 hl.bind(mod .. " + CTRL + F",  hl.dsp.window.fullscreen())
+-- same action as double-clicking a window's titlebar
+hl.bind(mod .. " + equal",     hl.dsp.window.fullscreen({ mode = "maximized" }))
 hl.bind(mod .. " + SHIFT + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mod .. " + SHIFT + E", hl.dsp.exit())
 hl.bind(mod .. " + P",         hl.dsp.window.pseudo())
@@ -201,6 +213,14 @@ hl.bind(mod .. " + left",  hl.dsp.focus({ direction = "left" }))
 hl.bind(mod .. " + right", hl.dsp.focus({ direction = "right" }))
 hl.bind(mod .. " + up",    hl.dsp.focus({ direction = "up" }))
 hl.bind(mod .. " + down",  hl.dsp.focus({ direction = "down" }))
+
+-- Windows-style alt-tab: hold ALT and tap Tab to step through windows (by
+-- recency, current workspace only -- there is no working reverse direction
+-- on this dispatcher, tested directly, so it is forward-only). Each tap
+-- maximizes the window it lands on (alt-tab.sh: "cycle, then maximize if
+-- not already"), so by the time you release ALT the one you landed on is
+-- already full-screen -- no separate release handler needed.
+hl.bind("ALT + Tab", hl.dsp.exec_cmd("~/.config/hypr/alt-tab.sh"))
 
 -- workspaces
 for i = 1, 5 do
@@ -257,4 +277,24 @@ hl.window_rule({
     name  = "float-nwg-look",
     match = { class = "^(nwg-look)$" },
     float = true,
+})
+
+-- open maximized: browsers and the editor benefit most from the full
+-- usable area, so skip the "resize it every time" step
+hl.window_rule({
+    name  = "maximize-floorp",
+    match = { class = "^(floorp)$" },
+    maximize = true,
+})
+
+hl.window_rule({
+    name  = "maximize-zen",
+    match = { class = "^(zen)$" },
+    maximize = true,
+})
+
+hl.window_rule({
+    name  = "maximize-codium",
+    match = { class = "^(codium)$" },
+    maximize = true,
 })

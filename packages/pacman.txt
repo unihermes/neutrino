@@ -23,6 +23,10 @@ fastfetch
 # an older mirror you may need it from the AUR instead.
 ly
 hyprland
+hyprlock
+# swaybg, not hyprpaper: hyprpaper's current release needs a rendering
+# protocol this Hyprland version does not implement, so nothing appears
+swaybg
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
 polkit-kde-agent
@@ -34,6 +38,11 @@ qt6-svg
 qt6-shadertools
 qt6-5compat
 qt6ct
+
+# network
+# iwd handles Wi-Fi, systemd-networkd hands out addresses, systemd-resolved
+# does DNS. networkd and resolved ship with systemd, so only iwd is listed.
+iwd
 
 # audio
 pipewire
@@ -51,6 +60,12 @@ tumbler
 ffmpegthumbnailer
 xarchiver
 
+# notifications + secrets
+# gnome-keyring stores app secrets (browsers, VSCodium, Discord). ly's PAM
+# stack already calls pam_gnome_keyring, so it starts at login.
+swaync
+gnome-keyring
+
 # wayland utilities
 wofi
 wl-clipboard
@@ -64,6 +79,12 @@ nwg-look
 adwaita-icon-theme
 hicolor-icon-theme
 gtk-update-icon-cache
+# GTK3 looks for an actual theme folder named "Adwaita-dark", it does not
+# derive one from gtk-application-prefer-dark-theme the way libadwaita (GTK4)
+# apps do. Without this package the name in settings.ini/gsettings resolves
+# to nothing and GTK3 apps -- Thunar included -- silently fall back to light
+# Adwaita no matter what those files say.
+gnome-themes-extra
 
 # fonts
 ttf-ubuntu-nerd
@@ -83,3 +104,6 @@ obsidian
 # laptop
 brightnessctl
 upower
+
+# shell prompt
+starship

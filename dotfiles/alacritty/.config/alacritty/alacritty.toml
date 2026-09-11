@@ -8,10 +8,11 @@ decorations = "none"
 dynamic_padding = true
 
 [font]
-size = 11.0
-normal = { family = "UbuntuMono Nerd Font", style = "Regular" }
-bold   = { family = "UbuntuMono Nerd Font", style = "Bold" }
-italic = { family = "UbuntuMono Nerd Font", style = "Italic" }
+size = 14.0
+# ProggyVector comes from dotfiles/fonts, emboldened by embolden-font.py.
+# There is no italic face, so italic is synthesized from Regular.
+normal = { family = "ProggyVector", style = "Regular" }
+bold   = { family = "ProggyVector", style = "Bold" }
 
 [cursor]
 # Beam, not Block: a thin vertical bar sitting between characters rather than a

@@ -72,6 +72,24 @@ xdg-mime default thunar.desktop inode/directory
 xdg-mime default org.pwmt.zathura.desktop application/pdf
 xdg-settings set default-url-scheme-handler file thunar.desktop || true
 
+# On Wayland, GTK3 apps (Thunar included) read their theme, icons and fonts from
+# gsettings and ignore settings.ini, which only GTK4 and tools like fastfetch
+# go by. Keep both in step with gtk/.config/gtk-3.0/settings.ini. With no
+# session bus, gsettings silently writes to a throwaway in-memory backend, so
+# read one key back to catch that.
+iface=org.gnome.desktop.interface
+gsettings set $iface icon-theme          'kora'
+gsettings set $iface gtk-theme           'Adwaita-dark'
+gsettings set $iface color-scheme        'prefer-dark'
+gsettings set $iface cursor-theme        'Bibata-Modern-Classic'
+gsettings set $iface font-name           'Ubuntu Nerd Font 11'
+gsettings set $iface document-font-name  'Ubuntu Nerd Font 11'
+gsettings set $iface monospace-font-name 'ProggyVector 11'
+if [[ $(gsettings get $iface icon-theme 2>/dev/null) != "'kora'" ]]; then
+  warn "gsettings did not stick (no session bus?). Rerun ./install.sh from a"
+  warn "logged-in session or Thunar will ignore the icon theme and fonts."
+fi
+
 # --- boot verbosity ------------------------------------------------------
 # Quiet by default: no kernel or unit output on startup or shutdown. Set
 # BOOT_VERBOSE=1 to get systemd's [ OK ] lines back, which is worth doing when
@@ -147,7 +165,63 @@ else
   warn "no systemd-boot entry or /etc/kernel/cmdline found, leaving boot alone"
 fi
 
+# --- boot speed ----------------------------------------------------------
+# /boot (the ESP) is vfat, and vfat is a module. On this laptop the IPU6 camera
+# stack stalls kernel module loading for ~10s at boot, until the kernel gives
+# up waiting on the ov01a10 sensor. Mounting /boot has to load vfat, so it sits
+# in that stall, and sysinit.target, ly and everything after it wait on the
+# mount. Loading vfat from the initramfs means the mount needs no module load.
+log "loading vfat from the initramfs"
+mkconf=/etc/mkinitcpio.conf
+if [[ -f $mkconf ]] && ! grep -Eq '^MODULES=\(.*\<vfat\>' "$mkconf"; then
+  [[ -f $mkconf.neutrino.bak ]] || sudo cp "$mkconf" "$mkconf.neutrino.bak"
+  if grep -q '^MODULES=(' "$mkconf"; then
+    sudo sed -i -E 's/^MODULES=\(([^)]*)\)/MODULES=(\1 vfat)/; s/^MODULES=\( vfat\)/MODULES=(vfat)/' "$mkconf"
+  else
+    echo 'MODULES=(vfat)' | sudo tee -a "$mkconf" >/dev/null
+  fi
+  sudo mkinitcpio -P
+fi
 
+log "enabling services"
+# Network: iwd for Wi-Fi, systemd-networkd for addresses, systemd-resolved for
+# DNS. iwd's own DHCP stays off (its default), so it and networkd never fight
+# over the interface. networkd does nothing without a .network file and a
+# Minimal install may not have one, so DHCP configs are added only when
+# /etc/systemd/network has none. Existing configs are left alone.
+if ! compgen -G "/etc/systemd/network/*.network" >/dev/null; then
+  log "adding DHCP configs for systemd-networkd"
+  sudo mkdir -p /etc/systemd/network
+  sudo tee /etc/systemd/network/25-wireless.network >/dev/null <<'NET'
+[Match]
+Type=wlan
+
+[Network]
+DHCP=yes
+IgnoreCarrierLoss=3s
+NET
+  # RequiredForOnline=no: an unplugged port would otherwise make
+  # systemd-networkd-wait-online sit out its full timeout.
+  sudo tee /etc/systemd/network/20-wired.network >/dev/null <<'NET'
+[Match]
+Type=ether
+
+[Link]
+RequiredForOnline=no
+
+[Network]
+DHCP=yes
+NET
+fi
+sudo systemctl enable --now iwd systemd-networkd systemd-resolved
+# resolved only answers apps that ask it, so resolv.conf has to point at its
+# stub. Done after resolved is running so DNS is never pointed at nothing. A
+# resolv.conf that is already a symlink is left alone.
+if [[ ! -L /etc/resolv.conf ]]; then
+  [[ -f /etc/resolv.conf ]] && sudo cp /etc/resolv.conf /etc/resolv.conf.neutrino.bak
+  sudo ln -sf ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+fi
+systemctl --user enable --now pipewire pipewire-pulse wireplumber
 # `systemctl cat` exits non-zero on a missing unit; `list-unit-files` does not,
 # so it is the wrong test for "is this installed". The file check is a fallback
 # for template units, which some systemd versions will not `cat`.
@@ -155,26 +229,32 @@ have_unit() {
   systemctl cat "$1" &>/dev/null     || [[ -f /usr/lib/systemd/system/$1 || -f /etc/systemd/system/$1 ]]
 }
 
-log "enabling services"
+# iwd is Type=dbus, so systemd waits for it to claim its bus name before
+# reaching network.target, and ly waits on network.target via
+# systemd-user-sessions. iwd needs crypto modules first, and those sit in the
+# same camera module-loading stall as vfat, which held the greeter back ~9s.
+# Type=exec counts iwd as started once it launches. Wi-Fi comes up the same.
+if have_unit iwd.service; then
+  log "stopping ly from waiting on iwd"
+  sudo mkdir -p /etc/systemd/system/iwd.service.d
+  printf '[Service]\nType=exec\n' | sudo tee /etc/systemd/system/iwd.service.d/neutrino.conf >/dev/null
+  sudo systemctl daemon-reload
+fi
 
-# Guarded, not assumed. A missing unit here used to abort the whole run under
-# set -e, which meant a machine with no NetworkManager installed never reached
-# the dotfiles, the mime handlers, or the greeter.
-if have_unit NetworkManager.service; then
-  # Two network managers fighting over the same interface is worse than one
-  # that is not running, and on a laptop it can drop the connection mid-run.
-  if systemctl is-enabled systemd-networkd.service &>/dev/null ||
-     systemctl is-enabled iwd.service &>/dev/null; then
-    warn "systemd-networkd or iwd is already enabled, leaving networking alone"
-  else
-    sudo systemctl enable --now NetworkManager
-  fi
-else
-  warn "NetworkManager.service not found, leaving networking alone"
+# systemd's TPM SRK setup costs ~2s every boot and nothing here uses it: no
+# TPM-unlocked LUKS, secure boot off. Masking only stops the setup running; it
+# does not touch what is stored in the TPM, so Windows and BitLocker are
+# unaffected. Left alone if crypttab asks for a TPM unlock.
+if ! grep -qs 'tpm2-device' /etc/crypttab; then
+  log "masking systemd TPM setup"
+  sudo systemctl mask systemd-tpm2-setup-early.service systemd-tpm2-setup.service
 fi
 
 systemctl --user enable --now pipewire pipewire-pulse wireplumber ||
   warn "could not enable the pipewire user units"
+
+sudo systemctl enable --now bluetooth.service || warn "bluetooth.service not found"
+sudo systemctl enable --now power-profiles-daemon.service || warn "power-profiles-daemon.service not found"
 
 # Display manager. Deliberately NOT --now: ly takes over a VT, and starting it
 # here would pull the terminal out from under this script mid-run. It comes up
@@ -209,7 +289,9 @@ fi
 
 log "verifying font and icon names actually resolve"
 fc-match sans-serif
+fc-match serif
 fc-match monospace
+[[ -n $(fc-list ProggyVector) ]] || warn "ProggyVector not found. Run ./link.sh, then fc-cache -f"
 [[ -d /usr/share/icons/kora ]] || warn "kora icon theme not found in /usr/share/icons"
 if [[ ! -d /usr/share/icons/Bibata-Modern-Classic ]]; then
   warn "Bibata-Modern-Classic not found. Variants actually installed:"

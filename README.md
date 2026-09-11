@@ -15,9 +15,13 @@ cd neutrino
 2. Bootstraps `yay` from `yay-bin` if it is not already present
 3. Installs everything in `packages/pacman.txt` and `packages/aur.txt`
 4. Symlinks `dotfiles/` into `$HOME` with GNU stow
-5. Rebuilds font and icon caches, sets Thunar as the directory handler, and
-   quiets the kernel command line
-6. Enables NetworkManager, pipewire, and the ly greeter
+5. Rebuilds font and icon caches, sets Thunar as the directory handler,
+   writes the theme, icons and fonts to gsettings, and quiets the kernel
+   command line
+6. Applies the boot speed fixes: vfat in the initramfs, iwd no longer blocking
+   the greeter, and systemd's unused TPM setup masked
+7. Enables iwd, systemd-networkd, systemd-resolved, pipewire, and the ly
+   greeter
 
 Every step is idempotent. `--needed` skips installed packages, `stow -R`
 restows cleanly, `enable --now` is a no-op on an already-running unit. Safe to
@@ -43,47 +47,14 @@ what you wrote.
 
 `install.sh` calls it rather than duplicating the logic.
 
-## Stripping a system back to base
-
-`strip.sh` removes every explicitly-installed package that is not on the keep
-list, then orphaned dependencies, then this repo's dotfile symlinks. It is for
-turning a machine that has accumulated things into one install.sh can
-provision from a known state, without reinstalling Arch.
-
-```bash
-./strip.sh            # dry run, prints the full transaction, changes nothing
-./strip.sh --apply    # asks you to type STRIP, then does it
-```
-
-If a candidate turns out to be required by a package that is staying, pacman
-refuses the whole transaction. `strip.sh` reads the name out of that error,
-drops it from the removal set and asks again, repeating until pacman is
-satisfied -- so a dependency you did not think of does not stop the run. It
-reports everything it rescued. That is recomputed on every run and does not
-need saving.
-
-Edit `packages/keep.txt` before running. It protects the kernel, the boot
-path, NetworkManager, sudo and git by default, and a built-in list refuses to
-remove those regardless. **If this machine uses iwd, dhcpcd or a bootloader
-package like grub, add it to keep.txt first** -- removing your only network
-daemon leaves you with no way to reinstall anything.
-
-It does not touch `/etc`, home directories, or anything not owned by pacman,
-with one exception. Third-party repos such as Chaotic-AUR put their mirrorlist
-in a package, and `/etc/pacman.conf` `Include`s that file. Remove the package
-and pacman dies on every invocation with "config file ... could not be read",
-leaving you unable to install anything -- including whatever would fix it.
-`strip.sh` comments out repo sections whose Include has gone missing, backing
-up `pacman.conf` first. `[options]` is never touched.
-
 ## Layout
 
 ```
 neutrino/
 ├── install.sh
 ├── link.sh              # dotfiles only, no packages or services
-├── strip.sh             # roll a system back to base Arch
 ├── fix-ly.sh            # diagnose and repair a greeter that will not start
+├── embolden-font.py     # rebuild ProggyVector at a different weight
 ├── packages/
 │   ├── pacman.txt        # native, one per line, # comments allowed
 │   └── aur.txt
@@ -96,7 +67,10 @@ neutrino/
     ├── zathura/.config/zathura/zathurarc
     ├── gtk/.config/gtk-3.0/settings.ini
     ├── gtk/.config/gtk-4.0/settings.ini
-    └── fontconfig/.config/fontconfig/fonts.conf
+    ├── fontconfig/.config/fontconfig/fonts.conf
+    ├── fonts/.local/share/fonts/ProggyVector/{Regular,Bold}.ttf
+    ├── bash/.bashrc
+    └── starship/.config/starship.toml
 ```
 
 Each directory under `dotfiles/` mirrors its own path relative to `$HOME`, so
@@ -136,6 +110,33 @@ Run it again without the variable to go back to quiet. Either way the
 bootloader entry is backed up to `*.neutrino.bak` first, and a result that has
 lost its `root=` is refused rather than written.
 
+## Boot speed
+
+On the XPS 13 the IPU6 camera stack stalls kernel module loading for about 10s
+at boot, until the kernel gives up waiting on the `ov01a10` sensor. Anything
+that needs a module in that window waits with it. `install.sh` routes the two
+things the greeter was waiting on around the stall:
+
+- **`/boot` mount.** The ESP is vfat, and vfat is a module, so the mount sat in
+  the stall and held up `sysinit.target`. `vfat` is now in `MODULES=()` in
+  `/etc/mkinitcpio.conf` (backed up to `*.neutrino.bak`).
+- **iwd.** It is `Type=dbus` and needs crypto modules before it claims its bus
+  name, and ly waits on `network.target`. A drop-in at
+  `/etc/systemd/system/iwd.service.d/neutrino.conf` sets `Type=exec`.
+
+It also masks `systemd-tpm2-setup-early` and `systemd-tpm2-setup`, about 2s,
+unless `/etc/crypttab` asks for a TPM unlock. That stops the setup running and
+leaves the TPM's contents alone, so Windows and BitLocker are unaffected.
+
+Wi-Fi, Bluetooth and audio still finish loading about 10s in, after the greeter
+is up. To see where time goes:
+
+```bash
+systemd-analyze
+systemd-analyze blame | head
+systemd-analyze critical-chain ly@tty2.service
+```
+
 ## Theme
 
 Everything is on one grayscale ramp. No hues anywhere: emphasis is carried by
@@ -154,6 +155,24 @@ compiler output and `ls`. The `[colors.normal]` and `[colors.bright]` blocks in
 
 nvim carries its own scheme in `init.lua` rather than pulling a plugin, so
 there is nothing to install and nothing to keep in sync.
+
+Fonts are Ubuntu Nerd Font for sans-serif, serif and UI text, and ProggyVector
+for monospace. `fonts.conf` falls back to UbuntuMono Nerd Font for the icon
+glyphs ProggyVector lacks. The ProggyVector in `dotfiles/fonts` is not the
+upstream file: its outlines are thickened slightly (Regular +18 units at 1024
+upem) and there is a real Bold (+56). Upstream only ships Regular, and
+fontconfig's synthetic bold has a single fixed strength. To change the weight,
+start from the upstream `ProggyVector-Regular.ttf` from
+[bluescan/proggyfonts](https://github.com/bluescan/proggyfonts):
+
+```bash
+./embolden-font.py ProggyVector-Regular.ttf dotfiles/fonts/.local/share/fonts/ProggyVector/ProggyVector-Regular.ttf 18 Regular 400
+./embolden-font.py ProggyVector-Regular.ttf dotfiles/fonts/.local/share/fonts/ProggyVector/ProggyVector-Bold.ttf    56 Bold    700
+fc-cache -f
+```
+
+Do not also install `ttf-proggy-vector` from the AUR, or fontconfig sees two
+Regular faces with the same name and picks either.
 
 ## Regenerating the package lists
 
@@ -184,6 +203,15 @@ fc-match monospace
   why `install.sh` does not pass `--noconfirm` to the AUR step.
 - **Thunar needs its extras.** No `gvfs` means no trash or mounting, no
   `tumbler` means no thumbnails. Both are in `pacman.txt`.
+- **Networking is iwd plus systemd-networkd**, not NetworkManager. iwd joins
+  the network, networkd runs DHCP, resolved does DNS. Connect with
+  `iwctl station wlan0 connect <SSID>` (`iwctl device list` if the interface
+  has another name). `install.sh` writes DHCP configs to
+  `/etc/systemd/network` only when that directory has none.
+- **Wayland ignores settings.ini for GTK3.** Thunar and other GTK3 apps take
+  their theme, icons and fonts from gsettings, while fastfetch and GTK4 read
+  `settings.ini`. That is how fastfetch can report kora while Thunar shows
+  Adwaita. `install.sh` sets both. Change one, change the other.
 - **Kora 2.0.0** dropped upstream symlinks and icons half-resolve in some
   panels. Check the AUR comments if theming looks wrong.
 
