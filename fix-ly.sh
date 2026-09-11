@@ -57,13 +57,25 @@ ok "using $dm_unit"
 
 # --- 3. is another display manager already in charge ---------------------
 log "checking for a display manager already installed"
-current=$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)
-if [[ -n $current && $current != *ly* ]]; then
-  warn "display-manager.service currently points at:"
-  warn "  $current"
-  warn "only one greeter can own it. Disable that one first, for example:"
-  warn "  sudo systemctl disable $(basename "$current")"
-  die "refusing to fight with an existing display manager"
+dm_link=/etc/systemd/system/display-manager.service
+# Test the symlink itself, not `readlink -f`. GNU readlink -f prints the path
+# even when nothing is there -- only the parent directories have to exist --
+# so treating its output as "a display manager is installed" is true on every
+# machine, including one with no greeter at all.
+if [[ -L $dm_link ]]; then
+  current=$(basename "$(readlink "$dm_link")")
+  if [[ $current == ly* ]]; then
+    ok "display-manager.service already points at $current"
+  else
+    warn "display-manager.service currently points at $current"
+    warn "only one greeter can own it. Disable that one first:"
+    warn "  sudo systemctl disable $current"
+    die "refusing to fight with an existing display manager"
+  fi
+elif [[ -e $dm_link ]]; then
+  warn "$dm_link exists but is not a symlink, which is unusual"
+else
+  ok "no display manager currently owns display-manager.service"
 fi
 
 # --- 4. enable it --------------------------------------------------------
@@ -99,8 +111,11 @@ log "state now:"
 printf '   unit           %s\n' "$dm_unit"
 printf '   enabled        %s\n' "$(systemctl is-enabled "$dm_unit" 2>&1)"
 printf '   default target %s\n' "$(systemctl get-default)"
-printf '   display-manager %s\n' \
-  "$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || echo '(not set)')"
+if [[ -L $dm_link ]]; then
+  printf '   display-manager %s\n' "$(readlink "$dm_link")"
+else
+  printf '   display-manager %s\n' "(not set)"
+fi
 
 echo
 if ! systemctl is-enabled "$dm_unit" &>/dev/null; then
