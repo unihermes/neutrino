@@ -1,0 +1,12 @@
+# Neutrino - default cursor
+# ~/.icons/default/index.theme
+#
+# The XCursor fallback. Apps that read neither the GTK setting nor
+# XCURSOR_THEME -- older X11 clients, some Qt and Electron apps under XWayland
+# -- resolve their cursor through this file, and without it they fall back to
+# the black-and-white Adwaita default while everything else is themed.
+
+[Icon Theme]
+Name=Default
+Comment=Default cursor theme
+Inherits=Bibata-Modern-Crosshair

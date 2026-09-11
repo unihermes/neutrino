@@ -20,3 +20,10 @@ claude-code
 zen-browser-bin
 floorp-bin
 kora-icon-theme
+
+# cursor. -bin is the prebuilt theme; plain bibata-cursor-theme renders every
+# cursor from SVG with clickgen and takes a long time. Confirm the exact name
+# and which variants it ships before trusting this:
+#   yay -Ss bibata
+#   ls /usr/share/icons | grep -i bibata
+bibata-cursor-theme-bin
