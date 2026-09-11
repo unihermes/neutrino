@@ -158,11 +158,28 @@ if (( ${#remove[@]} > 0 )); then
   sudo pacman -Rns --noconfirm "${remove[@]}"
 fi
 
+# Orphan sweep. This has to honour the keep list too: a package can be present
+# as a dependency rather than an explicit install -- NetworkManager often is --
+# in which case it never appears in `pacman -Qqe`, keep.txt never sees it, and
+# removing its parent turns it into an orphan. Sweeping blindly then takes out
+# the network on a machine with an empty package cache and no way to get it
+# back.
 log "removing orphaned dependencies"
 while true; do
   mapfile -t orphans < <(pacman -Qqdt 2>/dev/null || true)
-  (( ${#orphans[@]} == 0 )) && break
-  sudo pacman -Rns --noconfirm "${orphans[@]}"
+  sweep=()
+  for pkg in "${orphans[@]}"; do
+    [[ " ${keep[*]} " == *" $pkg "* ]] && continue
+    [[ $pkg =~ $PROTECTED ]] && continue
+    sweep+=("$pkg")
+  done
+  (( ${#sweep[@]} == 0 )) && break
+  sudo pacman -Rns --noconfirm "${sweep[@]}"
+  # Anything kept here stops being an orphan candidate only because we skip it,
+  # so mark it explicit and pacman will not offer it up again.
+  for pkg in "${orphans[@]}"; do
+    [[ " ${sweep[*]} " == *" $pkg "* ]] || sudo pacman -D --asexplicit "$pkg" >/dev/null 2>&1 || true
+  done
 done
 
 # Comment out repo sections whose Include file no longer exists. Rescanned
@@ -217,8 +234,11 @@ for l in "${links[@]:-}"; do
   [[ -n $l ]] && rm -f "$l"
 done
 
-log "clearing the package cache"
-sudo pacman -Scc --noconfirm || true
+# The package cache is deliberately left alone. It is the only way to reinstall
+# something offline, which is exactly the situation you are in if a network
+# package went out with the sweep. Clear it yourself with `pacman -Scc` once
+# the machine is provisioned and online again.
+log "keeping the package cache, it is your offline recovery path"
 
 cat <<'EOF'
 
