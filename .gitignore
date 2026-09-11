@@ -9,3 +9,10 @@ Thumbs.db
 # nvim state that should never be committed
 dotfiles/nvim/.config/nvim/lazy-lock.json.bak
 dotfiles/nvim/.local/
+
+# Hyprland generates its own config and prefers hyprland.lua over
+# hyprland.conf. Because ~/.config/hypr is a stow symlink into this repo, that
+# generated file lands here -- and silently wins over the config in this repo.
+# Ignore it so it never gets committed; delete it if Hyprland stops reading
+# hyprland.conf.
+dotfiles/hypr/.config/hypr/hyprland.lua
