@@ -1,6 +1,9 @@
 # Repo (native) packages. One per line, # comments allowed.
 # Regenerate from a known-good system with:  pacman -Qqen > packages/pacman.txt
 
+# networking
+networkmanager
+
 # base tooling
 neovim
 alacritty

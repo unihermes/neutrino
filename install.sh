@@ -148,16 +148,33 @@ else
 fi
 
 
-log "enabling services"
-sudo systemctl enable --now NetworkManager
-systemctl --user enable --now pipewire pipewire-pulse wireplumber
-
 # `systemctl cat` exits non-zero on a missing unit; `list-unit-files` does not,
 # so it is the wrong test for "is this installed". The file check is a fallback
 # for template units, which some systemd versions will not `cat`.
 have_unit() {
   systemctl cat "$1" &>/dev/null     || [[ -f /usr/lib/systemd/system/$1 || -f /etc/systemd/system/$1 ]]
 }
+
+log "enabling services"
+
+# Guarded, not assumed. A missing unit here used to abort the whole run under
+# set -e, which meant a machine with no NetworkManager installed never reached
+# the dotfiles, the mime handlers, or the greeter.
+if have_unit NetworkManager.service; then
+  # Two network managers fighting over the same interface is worse than one
+  # that is not running, and on a laptop it can drop the connection mid-run.
+  if systemctl is-enabled systemd-networkd.service &>/dev/null ||
+     systemctl is-enabled iwd.service &>/dev/null; then
+    warn "systemd-networkd or iwd is already enabled, leaving networking alone"
+  else
+    sudo systemctl enable --now NetworkManager
+  fi
+else
+  warn "NetworkManager.service not found, leaving networking alone"
+fi
+
+systemctl --user enable --now pipewire pipewire-pulse wireplumber ||
+  warn "could not enable the pipewire user units"
 
 # Display manager. Deliberately NOT --now: ly takes over a VT, and starting it
 # here would pull the terminal out from under this script mid-run. It comes up

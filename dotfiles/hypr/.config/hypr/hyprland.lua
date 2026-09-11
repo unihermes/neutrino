@@ -189,7 +189,7 @@ hl.bind(mod .. " + Q",         hl.dsp.window.close())
 -- Two different things, deliberately on separate binds:
 --   maximize  fills the usable area, stopping below the Quickshell bar
 --   fullscreen covers the entire output, bar included
-hl.bind(mod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "maximize" }))
+hl.bind(mod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "maximized" }))
 hl.bind(mod .. " + CTRL + F",  hl.dsp.window.fullscreen())
 hl.bind(mod .. " + SHIFT + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mod .. " + SHIFT + E", hl.dsp.exit())
