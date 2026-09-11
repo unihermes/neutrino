@@ -30,7 +30,7 @@ Use it on a machine where you only want the configs, or to relink after adding
 a new directory under `dotfiles/`.
 
 Apps write their own config when none exists -- Hyprland regenerates
-`~/.config/hypr/hyprland.conf` on every start without one -- and that real file
+`~/.config/hypr/hyprland.lua` on every start without one -- and that real file
 then blocks stow from linking yours, so the app goes on reading its own default
 and your repo config is never used. `link.sh` moves such files into a
 timestamped `~/.config-backup-*` first. Nothing is deleted. This is the safe
@@ -88,7 +88,7 @@ neutrino/
 │   ├── pacman.txt        # native, one per line, # comments allowed
 │   └── aur.txt
 └── dotfiles/
-    ├── hypr/.config/hypr/hyprland.conf
+    ├── hypr/.config/hypr/hyprland.lua
     ├── quickshell/.config/quickshell/shell.qml
     ├── wofi/.config/wofi/{config,style.css}
     ├── nvim/.config/nvim/init.lua

@@ -22,7 +22,7 @@ mapfile -t stow_pkgs < <(find dotfiles -mindepth 1 -maxdepth 1 -type d -printf '
 (( ${#stow_pkgs[@]} > 0 )) || die "no package directories found under dotfiles/"
 
 # Move real files out of the way before stowing. Apps write their own configs
-# when none exist -- Hyprland regenerates ~/.config/hypr/hyprland.conf on every
+# when none exist -- Hyprland regenerates ~/.config/hypr/hyprland.lua on every
 # start without one -- and that file then blocks stow from linking ours, so the
 # app keeps reading its own default forever. Nothing is deleted: conflicts go
 # to a timestamped backup. This is the safe version of `stow --adopt`, which
@@ -70,4 +70,4 @@ backup_conflicts
 log "linking: ${stow_pkgs[*]}"
 (cd dotfiles && stow -t "$HOME" -R "${stow_pkgs[@]}")
 
-log "done. verify a link with: ls -l ~/.config/hypr/hyprland.conf"
+log "done. verify a link with: ls -l ~/.config/hypr/hyprland.lua"

@@ -182,7 +182,7 @@ fc-match monospace
 if [[ ! -d /usr/share/icons/Bibata-Modern-Classic ]]; then
   warn "Bibata-Modern-Classic not found. Variants actually installed:"
   ls /usr/share/icons 2>/dev/null | grep -i bibata || warn "  (none)"
-  warn "correct the name in hyprland.conf, gtk settings.ini and .icons/default"
+  warn "correct the name in hyprland.lua, gtk settings.ini and .icons/default"
 fi
 
 if (( aur_failed )); then
