@@ -227,11 +227,11 @@ hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"
 ---- WINDOW RULES ----
 ----------------------
 
-hl.window_rule({
-    name  = "suppress-maximize-events",
-    match = { class = ".*" },
-    suppress_event = "maximize",
-})
+-- Deliberately NOT suppressing maximize events. Hyprland's own example config
+-- ships a `suppress_event = "maximize"` rule matching class ".*", but that is
+-- what double-clicking a titlebar sends: with it in place, double-click stops
+-- maximizing anything. Leaving it out keeps that working, and maximize honours
+-- the Quickshell bar's reserved zone, so the window fills the space below it.
 
 hl.window_rule({
     -- Fixes dragging issues with XWayland
