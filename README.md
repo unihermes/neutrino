@@ -15,7 +15,8 @@ cd neutrino
 2. Bootstraps `yay` from `yay-bin` if it is not already present
 3. Installs everything in `packages/pacman.txt` and `packages/aur.txt`
 4. Symlinks `dotfiles/` into `$HOME` with GNU stow
-5. Rebuilds font and icon caches, sets Thunar as the directory handler
+5. Rebuilds font and icon caches, sets Thunar as the directory handler, and
+   strips `quiet` from the kernel command line so boot is verbose
 6. Enables NetworkManager, pipewire, and the ly greeter
 
 Every step is idempotent. `--needed` skips installed packages, `stow -R`

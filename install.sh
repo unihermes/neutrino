@@ -72,6 +72,67 @@ xdg-mime default thunar.desktop inode/directory
 xdg-mime default org.pwmt.zathura.desktop application/pdf
 xdg-settings set default-url-scheme-handler file thunar.desktop || true
 
+# --- verbose boot --------------------------------------------------------
+# systemd prints a [ OK ] line per unit unless `quiet` is on the kernel command
+# line. Strip it, so a boot that hangs shows you which unit it hung on instead
+# of a blank screen.
+#
+# Every file touched is backed up first. A malformed options line -- a lost
+# root= UUID above all -- is an unbootable machine, and systemd-boot will not
+# tell you why.
+strip_quiet() {
+  local f=$1 mode=$2 tmp
+  [[ -f $f ]] || return 1
+  [[ -f $f.neutrino.bak ]] || sudo cp "$f" "$f.neutrino.bak"
+  tmp=$(mktemp)
+  # Filter the cmdline token by token rather than substituting patterns out of
+  # it. Adjacent options share the space between them, so a global s/// can
+  # only ever delete every other one: `quiet loglevel=3 splash` loses quiet and
+  # splash and keeps loglevel.
+  awk -v mode="$mode" '
+    function clean(s,   i, n, a, out) {
+      n = split(s, a, /[ \t]+/)
+      out = ""
+      for (i = 1; i <= n; i++) {
+        if (a[i] == "") continue
+        if (a[i] ~ /^(quiet|splash|loglevel=[0-3]|rd\.udev\.log_level=[0-3])$/) continue
+        if (a[i] ~ /^(rd\.)?systemd\.show_status=/) continue
+        out = out (out == "" ? "" : " ") a[i]
+      }
+      return out " systemd.show_status=1"
+    }
+    mode == "options" && /^[[:space:]]*options[[:space:]]/ {
+      sub(/^[[:space:]]*options[[:space:]]+/, "")
+      print "options " clean($0)
+      next
+    }
+    mode == "plain" && NF { print clean($0); next }
+    { print }
+  ' "$f" > "$tmp"
+  # Never install an empty or truncated cmdline: that is an unbootable machine.
+  if [[ -s $tmp ]] && grep -q 'root=' "$tmp"; then
+    sudo cp "$tmp" "$f"
+    rm -f "$tmp"
+    return 0
+  fi
+  warn "refusing to write $f, the result had no root= in it"
+  rm -f "$tmp"
+  return 1
+}
+
+log "making the boot verbose"
+if [[ -f /etc/kernel/cmdline ]]; then
+  # Unified kernel image: the cmdline is baked in, so editing the file alone
+  # changes nothing until the image is rebuilt.
+  strip_quiet /etc/kernel/cmdline plain && sudo mkinitcpio -P
+elif compgen -G "/boot/loader/entries/*.conf" >/dev/null; then
+  for entry in /boot/loader/entries/*.conf; do
+    grep -q '^options' "$entry" && strip_quiet "$entry" options
+  done
+else
+  warn "no systemd-boot entry or /etc/kernel/cmdline found, leaving boot alone"
+fi
+
 log "enabling services"
 sudo systemctl enable --now NetworkManager
 systemctl --user enable --now pipewire pipewire-pulse wireplumber
