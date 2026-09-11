@@ -16,7 +16,7 @@ cd neutrino
 3. Installs everything in `packages/pacman.txt` and `packages/aur.txt`
 4. Symlinks `dotfiles/` into `$HOME` with GNU stow
 5. Rebuilds font and icon caches, sets Thunar as the directory handler, and
-   strips `quiet` from the kernel command line so boot is verbose
+   quiets the kernel command line
 6. Enables NetworkManager, pipewire, and the ly greeter
 
 Every step is idempotent. `--needed` skips installed packages, `stow -R`
@@ -122,6 +122,19 @@ to a TTY with `ctrl+alt+F3` and run it by hand to see what happened:
 Hyprland
 hyprctl configerrors
 ```
+
+## Boot output
+
+Boot and shutdown are quiet by default. To see systemd's `[ OK ]` lines --
+worth it when a boot hangs and you need to know which unit it hung on:
+
+```bash
+BOOT_VERBOSE=1 ./install.sh
+```
+
+Run it again without the variable to go back to quiet. Either way the
+bootloader entry is backed up to `*.neutrino.bak` first, and a result that has
+lost its `root=` is refused rather than written.
 
 ## Theme
 

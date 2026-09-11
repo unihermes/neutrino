@@ -72,16 +72,20 @@ xdg-mime default thunar.desktop inode/directory
 xdg-mime default org.pwmt.zathura.desktop application/pdf
 xdg-settings set default-url-scheme-handler file thunar.desktop || true
 
-# --- verbose boot --------------------------------------------------------
-# systemd prints a [ OK ] line per unit unless `quiet` is on the kernel command
-# line. Strip it, so a boot that hangs shows you which unit it hung on instead
-# of a blank screen.
+# --- boot verbosity ------------------------------------------------------
+# Quiet by default: no kernel or unit output on startup or shutdown. Set
+# BOOT_VERBOSE=1 to get systemd's [ OK ] lines back, which is worth doing when
+# a boot hangs and you need to see which unit it hung on:
+#
+#   BOOT_VERBOSE=1 ./install.sh
 #
 # Every file touched is backed up first. A malformed options line -- a lost
 # root= UUID above all -- is an unbootable machine, and systemd-boot will not
 # tell you why.
-strip_quiet() {
-  local f=$1 mode=$2 tmp
+BOOT_VERBOSE=${BOOT_VERBOSE:-0}
+
+set_boot_verbosity() {
+  local f=$1 mode=$2 want=$3 tmp
   [[ -f $f ]] || return 1
   [[ -f $f.neutrino.bak ]] || sudo cp "$f" "$f.neutrino.bak"
   tmp=$(mktemp)
@@ -89,17 +93,20 @@ strip_quiet() {
   # it. Adjacent options share the space between them, so a global s/// can
   # only ever delete every other one: `quiet loglevel=3 splash` loses quiet and
   # splash and keeps loglevel.
-  awk -v mode="$mode" '
+  awk -v mode="$mode" -v want="$want" '
     function clean(s,   i, n, a, out) {
       n = split(s, a, /[ \t]+/)
       out = ""
       for (i = 1; i <= n; i++) {
         if (a[i] == "") continue
-        if (a[i] ~ /^(quiet|splash|loglevel=[0-3]|rd\.udev\.log_level=[0-3])$/) continue
+        # drop every verbosity knob, then add back the ones we want
+        if (a[i] ~ /^(quiet|splash|loglevel=[0-9]|rd\.udev\.log_level=[0-9])$/) continue
         if (a[i] ~ /^(rd\.)?systemd\.show_status=/) continue
         out = out (out == "" ? "" : " ") a[i]
       }
-      return out " systemd.show_status=1"
+      if (want == "verbose")
+        return out " systemd.show_status=1"
+      return out " quiet loglevel=3 rd.udev.log_level=3 systemd.show_status=false"
     }
     mode == "options" && /^[[:space:]]*options[[:space:]]/ {
       sub(/^[[:space:]]*options[[:space:]]+/, "")
@@ -120,18 +127,26 @@ strip_quiet() {
   return 1
 }
 
-log "making the boot verbose"
+if (( BOOT_VERBOSE )); then
+  log "making the boot verbose"
+  boot_want=verbose
+else
+  log "making the boot quiet"
+  boot_want=quiet
+fi
+
 if [[ -f /etc/kernel/cmdline ]]; then
   # Unified kernel image: the cmdline is baked in, so editing the file alone
   # changes nothing until the image is rebuilt.
-  strip_quiet /etc/kernel/cmdline plain && sudo mkinitcpio -P
+  set_boot_verbosity /etc/kernel/cmdline plain "$boot_want" && sudo mkinitcpio -P
 elif compgen -G "/boot/loader/entries/*.conf" >/dev/null; then
   for entry in /boot/loader/entries/*.conf; do
-    grep -q '^options' "$entry" && strip_quiet "$entry" options
+    grep -q '^options' "$entry" && set_boot_verbosity "$entry" options "$boot_want"
   done
 else
   warn "no systemd-boot entry or /etc/kernel/cmdline found, leaving boot alone"
 fi
+
 
 log "enabling services"
 sudo systemctl enable --now NetworkManager
