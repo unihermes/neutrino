@@ -68,7 +68,13 @@ remove those regardless. **If this machine uses iwd, dhcpcd or a bootloader
 package like grub, add it to keep.txt first** -- removing your only network
 daemon leaves you with no way to reinstall anything.
 
-It does not touch `/etc`, home directories, or anything not owned by pacman.
+It does not touch `/etc`, home directories, or anything not owned by pacman,
+with one exception. Third-party repos such as Chaotic-AUR put their mirrorlist
+in a package, and `/etc/pacman.conf` `Include`s that file. Remove the package
+and pacman dies on every invocation with "config file ... could not be read",
+leaving you unable to install anything -- including whatever would fix it.
+`strip.sh` comments out repo sections whose Include has gone missing, backing
+up `pacman.conf` first. `[options]` is never touched.
 
 ## Layout
 

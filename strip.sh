@@ -98,6 +98,19 @@ if (( ${#rescued[@]} > 0 )); then
   warn "them to packages/keep.txt anyway if you want the decision recorded."
 fi
 
+# Third-party repos break pacman when their mirrorlist package is removed.
+#
+# A repo section in /etc/pacman.conf points at an Include file that a package
+# owns -- chaotic-mirrorlist, for instance. Remove the package and the file
+# goes with it, but the section stays, and from then on every pacman call dies
+# with "config file ... could not be read". Nothing can be installed, including
+# the packages needed to put it back.
+dead_repos=()
+while IFS= read -r inc; do
+  [[ -e $inc ]] || dead_repos+=("$inc")
+done < <(sed -n 's/^[[:space:]]*Include[[:space:]]*=[[:space:]]*//p' /etc/pacman.conf)
+
+
 # Symlinks into this repo. Removing a link never touches the repo file.
 links=()
 if [[ -d dotfiles ]]; then
@@ -110,6 +123,14 @@ if (( ${#links[@]} > 0 )); then
   echo
   log "${#links[@]} dotfile symlinks into this repo would be unlinked:"
   printf '   %s\n' "${links[@]}"
+fi
+
+if (( ${#dead_repos[@]} > 0 )); then
+  echo
+  warn "${#dead_repos[@]} repo Include files in /etc/pacman.conf are already missing:"
+  printf '   %s
+' "${dead_repos[@]}"
+  warn "their sections get commented out, otherwise pacman refuses to run at all"
 fi
 
 if (( ! APPLY )); then
@@ -143,6 +164,54 @@ while true; do
   (( ${#orphans[@]} == 0 )) && break
   sudo pacman -Rns --noconfirm "${orphans[@]}"
 done
+
+# Comment out repo sections whose Include file no longer exists. Rescanned
+# here rather than reusing the earlier list, since the removal above is what
+# usually creates them.
+repair_pacman_conf() {
+  local conf=/etc/pacman.conf missing=() inc backup tmp
+  while IFS= read -r inc; do
+    [[ -e $inc ]] || missing+=("$inc")
+  done < <(sed -n 's/^[[:space:]]*Include[[:space:]]*=[[:space:]]*//p' "$conf")
+  (( ${#missing[@]} == 0 )) && return 0
+
+  backup="$conf.bak-$(date +%Y%m%d-%H%M%S)"
+  sudo cp "$conf" "$backup"
+  log "disabling ${#missing[@]} dead repo section(s), original at $backup"
+
+  tmp=$(mktemp)
+  # Buffer each section, and comment the whole thing out if its Include is one
+  # of the missing paths. [options] is never touched: its Include is optional
+  # and commenting that header out would disable every setting under it.
+  printf '%s\n' "${missing[@]}" | awk '
+    NR == FNR { MISS[$0] = 1; next }
+    function flush(   i) {
+      for (i = 1; i <= n; i++) print (dead ? "#" buf[i] : buf[i])
+      n = 0; dead = 0
+    }
+    /^[[:space:]]*\[/ { flush(); sect = $0 }
+    { buf[++n] = $0 }
+    /^[[:space:]]*Include[[:space:]]*=/ {
+      p = $0
+      sub(/^[^=]*=[[:space:]]*/, "", p)
+      sub(/[[:space:]]+$/, "", p)
+      if (sect !~ /\[options\]/ && (p in MISS)) dead = 1
+    }
+    END { flush() }
+  ' - "$conf" > "$tmp"
+
+  if [[ -s $tmp ]]; then
+    sudo cp "$tmp" "$conf"
+    log "pacman.conf repaired, verifying"
+    sudo pacman -Sy >/dev/null || warn "pacman still unhappy, check $conf"
+  else
+    warn "refusing to write an empty pacman.conf, left it alone"
+  fi
+  rm -f "$tmp"
+}
+
+repair_pacman_conf
+
 
 for l in "${links[@]:-}"; do
   [[ -n $l ]] && rm -f "$l"
