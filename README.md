@@ -16,7 +16,7 @@ cd neutrino
 3. Installs everything in `packages/pacman.txt` and `packages/aur.txt`
 4. Symlinks `dotfiles/` into `$HOME` with GNU stow
 5. Rebuilds font and icon caches, sets Thunar as the directory handler
-6. Enables NetworkManager, pipewire, the VMware guest tools, and the ly greeter
+6. Enables NetworkManager, pipewire, and the ly greeter
 
 Every step is idempotent. `--needed` skips installed packages, `stow -R`
 restows cleanly, `enable --now` is a no-op on an already-running unit. Safe to
@@ -47,8 +47,7 @@ what you wrote.
 `strip.sh` removes every explicitly-installed package that is not on the keep
 list, then orphaned dependencies, then this repo's dotfile symlinks. It is for
 turning a machine that has accumulated things into one install.sh can
-provision from a known state -- the same starting point as a fresh snapshot,
-without reinstalling Arch.
+provision from a known state, without reinstalling Arch.
 
 ```bash
 ./strip.sh            # dry run, prints the full transaction, changes nothing
@@ -108,17 +107,32 @@ The Minimal archinstall profile ships no display manager, so this repo installs
 seizes a VT and would kill the install mid-run. Reboot and it greets you; pick
 Hyprland from the session list with the arrow keys.
 
-If Hyprland dies on VMware's virtual GPU you get dumped back at the greeter
-with no error shown. Switch to a TTY with `ctrl+alt+F2` and run it by hand to
-see what actually happened:
+If Hyprland dies you get dumped back at the greeter with no error shown. Switch
+to a TTY with `ctrl+alt+F3` and run it by hand to see what happened:
 
 ```bash
 Hyprland
-tail -40 ~/.local/share/hyprland/hyprland.log
+hyprctl configerrors
 ```
 
-Then uncomment the software rendering env lines at the top of
-`~/.config/hypr/hyprland.conf`, one block at a time.
+## Theme
+
+Everything is on one grayscale ramp. No hues anywhere: emphasis is carried by
+lightness and weight instead.
+
+```
+#0b0b0b base     #121212 bar      #1a1a1a surface   #242424 overlay
+#303030 border   #4d4d4d muted    #7a7a7a subtext   #c2c2c2 text
+#ebebeb bright
+```
+
+Alacritty's 16 ANSI slots are a lightness ramp rather than hues, so coloured
+output stays legible but monochrome -- you lose red-for-error in `git diff`,
+compiler output and `ls`. The `[colors.normal]` and `[colors.bright]` blocks in
+`alacritty.toml` are the only place to change if that trade is not worth it.
+
+nvim carries its own scheme in `init.lua` rather than pulling a plugin, so
+there is nothing to install and nothing to keep in sync.
 
 ## Regenerating the package lists
 
@@ -151,18 +165,17 @@ fc-match monospace
   `tumbler` means no thumbnails. Both are in `pacman.txt`.
 - **Kora 2.0.0** dropped upstream symlinks and icons half-resolve in some
   panels. Check the AUR comments if theming looks wrong.
-- **UEFI must be set before installing Arch.** Changing VM firmware afterwards
-  breaks the bootloader.
-- **Pasting into the VMware console.** Multi-line pastes while a command is
-  still running get buffered and mangled, and commands silently do not run.
-  Write to a file and `bash` it.
 
 ## Testing from zero
 
-The point of the repo is that it works on a machine that has never seen it.
-Roll the VM back to the clean post-archinstall snapshot, then:
+The point of the repo is that it works on a machine that has never seen it:
 
 ```bash
 sudo pacman -S --needed git
-git clone https://github.com/<you>/neutrino.git && cd neutrino && ./install.sh
+git clone https://github.com/unihermes/neutrino.git ~/neutrino
+cd ~/neutrino && ./install.sh
 ```
+
+Clone to a path you intend to keep. Stow's symlinks point at the repo's
+location on disk, so moving it afterwards leaves every config in `~/.config`
+dangling.

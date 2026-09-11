@@ -52,7 +52,6 @@ xarchiver
 wl-clipboard
 grim
 slurp
-brightnessctl
 
 # gtk + theming
 gtk3
@@ -77,5 +76,6 @@ zathura-pdf-mupdf
 # apps
 obsidian
 
-# vm guest integration
-open-vm-tools
+# laptop
+brightnessctl
+upower

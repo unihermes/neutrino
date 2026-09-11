@@ -83,12 +83,6 @@ have_unit() {
   systemctl cat "$1" &>/dev/null     || [[ -f /usr/lib/systemd/system/$1 || -f /etc/systemd/system/$1 ]]
 }
 
-# VMware guest integration: clipboard sharing, resolution, drag and drop.
-if have_unit vmtoolsd.service; then
-  sudo systemctl enable --now vmtoolsd.service
-  sudo systemctl enable --now vmware-vmblock-fuse.service || true
-fi
-
 # Display manager. Deliberately NOT --now: ly takes over a VT, and starting it
 # here would pull the terminal out from under this script mid-run. It comes up
 # on the next boot instead.
@@ -135,13 +129,9 @@ cat <<'EOF'
 done. reboot, and ly will greet you -- pick Hyprland from the session list
 with the left/right arrow keys.
 
-If Hyprland fails to start on VMware's virtual GPU you will land back at the
-greeter with no explanation. Drop to a TTY with ctrl+alt+F2, log in, and run
-Hyprland by hand to see the actual error:
+If Hyprland does not start you land back at the greeter with no explanation.
+Drop to a TTY with ctrl+alt+F3, log in, and run it by hand to see the error:
 
     Hyprland
-    tail -40 ~/.local/share/hyprland/hyprland.log
-
-Then uncomment the software-rendering env lines at the top of
-~/.config/hypr/hyprland.conf, one block at a time.
+    hyprctl configerrors
 EOF

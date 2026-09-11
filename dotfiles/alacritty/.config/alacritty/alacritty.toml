@@ -2,9 +2,10 @@
 # ~/.config/alacritty/alacritty.toml
 
 [window]
-padding = { x = 8, y = 8 }
-opacity = 0.95
+padding = { x = 12, y = 10 }
+opacity = 0.94
 decorations = "none"
+dynamic_padding = true
 
 [font]
 size = 11.0
@@ -22,13 +23,45 @@ thickness = 0.25
 # tell at a glance which terminal actually has keyboard input.
 unfocused_hollow = true
 
-[colors.primary]
-background = "#1e1e2e"
-foreground = "#cdd6f4"
-
-[colors.cursor]
-cursor = "#f5e0dc"
-text   = "#1e1e2e"
-
 [scrolling]
 history = 10000
+
+# --- grayscale ------------------------------------------------------------
+# The 16 ANSI slots are a lightness ramp rather than hues, so everything that
+# colours its output -- ls, git diff, compiler errors -- stays legible but
+# monochrome. If losing red-for-error turns out to matter more than the look,
+# this is the only block to change.
+
+[colors.primary]
+background = "#0b0b0b"
+foreground = "#c2c2c2"
+dim_foreground = "#7a7a7a"
+bright_foreground = "#ebebeb"
+
+[colors.cursor]
+cursor = "#ebebeb"
+text   = "#0b0b0b"
+
+[colors.selection]
+background = "#303030"
+text = "#ebebeb"
+
+[colors.normal]
+black   = "#1a1a1a"
+red     = "#6e6e6e"
+green   = "#828282"
+yellow  = "#969696"
+blue    = "#a0a0a0"
+magenta = "#aeaeae"
+cyan    = "#b8b8b8"
+white   = "#c2c2c2"
+
+[colors.bright]
+black   = "#303030"
+red     = "#8a8a8a"
+green   = "#9c9c9c"
+yellow  = "#adadad"
+blue    = "#b8b8b8"
+magenta = "#c8c8c8"
+cyan    = "#d8d8d8"
+white   = "#ebebeb"

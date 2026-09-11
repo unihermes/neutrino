@@ -6,18 +6,26 @@ set selection-clipboard clipboard
 set adjust-open width
 set guioptions ""
 set statusbar-home-tilde true
+set window-title-basename true
+set statusbar-h-padding 10
+set statusbar-v-padding 6
 
-# dark, matching the gtk theme
+# dark, on the same ramp as everything else
 set recolor true
-set recolor-keephue true
-set default-bg   "#1e1e2e"
-set default-fg   "#cdd6f4"
-set statusbar-bg "#11111b"
-set statusbar-fg "#cdd6f4"
-set inputbar-bg  "#11111b"
-set inputbar-fg  "#cdd6f4"
-set highlight-color        "#f9e2af"
-set highlight-active-color "#89b4fa"
+set recolor-keephue false
+set recolor-darkcolor  "#c2c2c2"
+set recolor-lightcolor "#0b0b0b"
+set default-bg     "#0b0b0b"
+set default-fg     "#c2c2c2"
+set statusbar-bg   "#121212"
+set statusbar-fg   "#7a7a7a"
+set inputbar-bg    "#121212"
+set inputbar-fg    "#ebebeb"
+set notification-bg "#121212"
+set notification-fg "#c2c2c2"
+set highlight-color        "#4d4d4d"
+set highlight-active-color "#ebebeb"
+set render-loading false
 
-# toggle the dark inversion
+# toggle the dark inversion, for documents that invert badly
 map <C-i> recolor
