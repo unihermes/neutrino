@@ -82,6 +82,7 @@ neutrino/
 ├── install.sh
 ├── link.sh              # dotfiles only, no packages or services
 ├── strip.sh             # roll a system back to base Arch
+├── fix-ly.sh            # diagnose and repair a greeter that will not start
 ├── packages/
 │   ├── pacman.txt        # native, one per line, # comments allowed
 │   └── aur.txt
@@ -107,6 +108,11 @@ The Minimal archinstall profile ships no display manager, so this repo installs
 `ly`, a TUI greeter. `install.sh` enables it but does not start it, because ly
 seizes a VT and would kill the install mid-run. Reboot and it greets you; pick
 Hyprland from the session list with the arrow keys.
+
+If ly never appears at boot, `./fix-ly.sh` works through the four causes in
+order -- not installed, wrong unit name, another display manager already
+owning `display-manager.service`, or a default boot target that never pulls a
+greeter in -- and prints what it found either way.
 
 If Hyprland dies you get dumped back at the greeter with no error shown. Switch
 to a TTY with `ctrl+alt+F3` and run it by hand to see what happened:
