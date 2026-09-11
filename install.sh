@@ -118,8 +118,8 @@ log "verifying font and icon names actually resolve"
 fc-match sans-serif
 fc-match monospace
 [[ -d /usr/share/icons/kora ]] || warn "kora icon theme not found in /usr/share/icons"
-if [[ ! -d /usr/share/icons/Bibata-Modern-Crosshair ]]; then
-  warn "Bibata-Modern-Crosshair not found. Variants actually installed:"
+if [[ ! -d /usr/share/icons/Bibata-Modern-Classic ]]; then
+  warn "Bibata-Modern-Classic not found. Variants actually installed:"
   ls /usr/share/icons 2>/dev/null | grep -i bibata || warn "  (none)"
   warn "correct the name in hyprland.conf, gtk settings.ini and .icons/default"
 fi
