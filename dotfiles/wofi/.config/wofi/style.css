@@ -1,0 +1,87 @@
+/* Neutrino - wofi
+ * ~/.config/wofi/style.css
+ *
+ * Same grayscale ramp as every other config here:
+ *   #0b0b0b base   #121212 bar    #1a1a1a surface  #242424 overlay
+ *   #303030 border #4d4d4d muted  #7a7a7a subtext  #c2c2c2 text
+ *   #ebebeb bright
+ *
+ * wofi is GTK, so these are GTK widget names, not arbitrary classes. Renaming
+ * a selector silently does nothing rather than erroring. */
+
+* {
+  font-family: "Ubuntu Nerd Font", sans-serif;
+  font-size: 13px;
+  /* wofi draws its own focus rings otherwise */
+  outline: none;
+}
+
+window {
+  background-color: #0b0b0b;
+  border: 1px solid #303030;
+  border-radius: 10px;
+}
+
+#outer-box {
+  background-color: transparent;
+  margin: 0px;
+}
+
+#input {
+  background-color: #141414;
+  color: #ebebeb;
+  border: 1px solid #303030;
+  border-radius: 7px;
+  margin: 12px 12px 6px 12px;
+  padding: 9px 12px;
+  /* the caret, which GTK calls this instead of caret-color */
+  caret-color: #ebebeb;
+}
+
+#input:focus {
+  border-color: #4d4d4d;
+}
+
+#input image {
+  color: #4d4d4d;
+}
+
+#inner-box {
+  background-color: transparent;
+  margin: 0px 8px 10px 8px;
+}
+
+#scroll {
+  margin: 0px;
+  padding: 0px;
+}
+
+#entry {
+  background-color: transparent;
+  border-radius: 7px;
+  padding: 8px 10px;
+  margin: 1px 4px;
+}
+
+#entry:selected {
+  background-color: #242424;
+}
+
+#text {
+  color: #7a7a7a;
+  margin: 0px 2px;
+}
+
+#entry:selected #text {
+  color: #ebebeb;
+  font-weight: 600;
+}
+
+/* the fuzzy-match substring wofi highlights inside a result */
+#text:selected {
+  color: #ebebeb;
+}
+
+#img {
+  margin-right: 10px;
+}

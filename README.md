@@ -88,6 +88,7 @@ neutrino/
 └── dotfiles/
     ├── hypr/.config/hypr/hyprland.conf
     ├── quickshell/.config/quickshell/shell.qml
+    ├── wofi/.config/wofi/{config,style.css}
     ├── nvim/.config/nvim/init.lua
     ├── alacritty/.config/alacritty/alacritty.toml
     ├── zathura/.config/zathura/zathurarc

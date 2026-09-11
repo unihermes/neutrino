@@ -49,6 +49,7 @@ ffmpegthumbnailer
 xarchiver
 
 # wayland utilities
+wofi
 wl-clipboard
 grim
 slurp

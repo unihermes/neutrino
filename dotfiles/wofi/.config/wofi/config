@@ -1,0 +1,18 @@
+# Neutrino - wofi
+# ~/.config/wofi/config
+
+show=drun
+prompt=
+width=520
+height=400
+lines=8
+location=center
+insensitive=true
+allow_images=true
+image_size=20
+no_actions=true
+hide_scroll=true
+gtk_dark=true
+term=alacritty
+key_expand=Tab
+matching=fuzzy
