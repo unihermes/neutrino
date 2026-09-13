@@ -27,9 +27,12 @@ hyprlock
 # swaybg, not hyprpaper: hyprpaper's current release needs a rendering
 # protocol this Hyprland version does not implement, so nothing appears
 swaybg
+# the Appearance page's wallpaper colours: a Material palette from the image
+matugen
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
-polkit-kde-agent
+# polkit agent; hyprland.lua starts its user unit
+hyprpolkitagent
 
 # qt runtime (quickshell)
 qt6-wayland
@@ -62,15 +65,23 @@ xarchiver
 
 # notifications + secrets
 # gnome-keyring stores app secrets (browsers, VSCodium, Discord). ly's PAM
-# stack already calls pam_gnome_keyring, so it starts at login.
+# stack already calls pam_gnome_keyring, so it starts at login. libnotify
+# provides notify-send, used by screenshot.sh and anything else that wants
+# to hand swaync a notification from a script.
 swaync
 gnome-keyring
+libnotify
 
 # wayland utilities
 wofi
 wl-clipboard
 grim
 slurp
+hyprpicker
+hypridle
+hyprsunset
+cava
+pacman-contrib
 
 # gtk + theming
 gtk3
@@ -104,6 +115,20 @@ obsidian
 # laptop
 brightnessctl
 upower
+# BlueZ itself: the bar's Bluetooth module and flyout talk to its daemon
+bluez
+# bt-agent. BlueZ refuses to pair at all unless some process has registered a
+# pairing agent to answer its confirmation request, and neither Quickshell nor
+# a non-interactive `bluetoothctl pair` provides one -- pairing just fails with
+# "No agent available for request type 2".
+bluez-tools
+# Drives both levers this chip actually responds to: the ACPI
+# platform_profile the firmware exposes, and intel_pstate's EPP. The bar's
+# battery flyout switches profiles over its DBus interface.
+power-profiles-daemon
 
 # shell prompt
 starship
+
+# layout-toggle.sh and maximize-focused.sh read hyprctl's JSON with it
+python

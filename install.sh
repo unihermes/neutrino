@@ -84,7 +84,7 @@ gsettings set $iface color-scheme        'prefer-dark'
 gsettings set $iface cursor-theme        'Bibata-Modern-Classic'
 gsettings set $iface font-name           'Ubuntu Nerd Font 11'
 gsettings set $iface document-font-name  'Ubuntu Nerd Font 11'
-gsettings set $iface monospace-font-name 'ProggyVector 11'
+gsettings set $iface monospace-font-name 'UbuntuMono Nerd Font Mono 11'
 if [[ $(gsettings get $iface icon-theme 2>/dev/null) != "'kora'" ]]; then
   warn "gsettings did not stick (no session bus?). Rerun ./install.sh from a"
   warn "logged-in session or Thunar will ignore the icon theme and fonts."
@@ -222,12 +222,36 @@ if [[ ! -L /etc/resolv.conf ]]; then
   sudo ln -sf ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 fi
 systemctl --user enable --now pipewire pipewire-pulse wireplumber
+
+# Nothing enables BlueZ on a Minimal install, and the bar's Bluetooth module
+# and the pairing agent below both need its daemon.
+sudo systemctl enable --now bluetooth.service
 # `systemctl cat` exits non-zero on a missing unit; `list-unit-files` does not,
 # so it is the wrong test for "is this installed". The file check is a fallback
 # for template units, which some systemd versions will not `cat`.
 have_unit() {
   systemctl cat "$1" &>/dev/null     || [[ -f /usr/lib/systemd/system/$1 || -f /etc/systemd/system/$1 ]]
 }
+
+# power-profiles-daemon. Nothing was managing the ACPI platform_profile, which
+# meant it sat wherever the firmware left it (this laptop boots into "quiet",
+# capping performance on AC for no saving worth having). PPD drives that and
+# intel_pstate's EPP together, which are the two levers this chip responds to.
+# Not TLP: the two fight over the same knobs, and TLP has nothing the bar can
+# switch on demand.
+if have_unit power-profiles-daemon.service; then
+  log "enabling power-profiles-daemon"
+  sudo systemctl enable --now power-profiles-daemon.service
+fi
+
+# Pairing agent. Without one BlueZ cannot complete a pairing at all -- see the
+# unit's own comment. It is a user service because it is per-session, and it
+# ships in dotfiles/systemd rather than being written here so `systemctl --user
+# cat` shows the reasoning next to the unit.
+if command -v bt-agent &>/dev/null; then
+  log "enabling the bluetooth pairing agent"
+  systemctl --user enable --now bt-agent.service
+fi
 
 # iwd is Type=dbus, so systemd waits for it to claim its bus name before
 # reaching network.target, and ly waits on network.target via
@@ -252,9 +276,6 @@ fi
 
 systemctl --user enable --now pipewire pipewire-pulse wireplumber ||
   warn "could not enable the pipewire user units"
-
-sudo systemctl enable --now bluetooth.service || warn "bluetooth.service not found"
-sudo systemctl enable --now power-profiles-daemon.service || warn "power-profiles-daemon.service not found"
 
 # Display manager. Deliberately NOT --now: ly takes over a VT, and starting it
 # here would pull the terminal out from under this script mid-run. It comes up
@@ -291,7 +312,7 @@ log "verifying font and icon names actually resolve"
 fc-match sans-serif
 fc-match serif
 fc-match monospace
-[[ -n $(fc-list ProggyVector) ]] || warn "ProggyVector not found. Run ./link.sh, then fc-cache -f"
+[[ -n $(fc-list "UbuntuMono Nerd Font") ]] || warn "UbuntuMono Nerd Font not found: install ttf-ubuntu-mono-nerd"
 [[ -d /usr/share/icons/kora ]] || warn "kora icon theme not found in /usr/share/icons"
 if [[ ! -d /usr/share/icons/Bibata-Modern-Classic ]]; then
   warn "Bibata-Modern-Classic not found. Variants actually installed:"

@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
-# ALT+Tab: cycle focus (by recency, current workspace), then maximize
-# whatever became active if it is not already -- so switching always lands
-# on a full-screen window, like Windows alt-tab between maximized apps.
+# ALT+Tab: cycle focus by recency on the current workspace, then hand off to
+# maximize-focused.sh, which maximizes what you landed on -- but only in
+# monocle mode, and only if it isn't already filling the screen.
 #
-# hl.dsp.window.fullscreen(...) only toggles; there is no reliable "set"
-# action in this Hyprland build (tested directly, it silently no-ops), so
-# the toggle is guarded by checking the actual state first to avoid
-# un-maximizing a window that was already maximized.
+# That guard matters more than it looks. Testing the fullscreen *flag* is not
+# enough: a window that is the only one on its workspace already occupies the
+# whole usable area while still reporting fullscreen=0, so a flag-based guard
+# re-maximizes it on every single alt-tab. The geometry never changes, but it
+# is still a state change, so the window animates and its contents reflow --
+# a visible resize for no reason.
 set -euo pipefail
 
 hyprctl dispatch 'hl.dsp.window.cycle_next()' >/dev/null
-
-fullscreen=$(hyprctl activewindow -j | python3 -c "import json,sys; print(json.load(sys.stdin).get('fullscreen', 0))" 2>/dev/null || echo 0)
-
-if [[ $fullscreen == 0 ]]; then
-  hyprctl dispatch 'hl.dsp.window.fullscreen({mode="maximized"})' >/dev/null
-fi
+exec "$(dirname "$0")/maximize-focused.sh"

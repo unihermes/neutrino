@@ -16,16 +16,38 @@
 ---- PROGRAMS ----
 ------------------
 
--- Binary names, not .desktop names. Verify on the real system:
---   which alacritty thunar codium zen-browser floorp wofi
+-- Binary names, not .desktop names.
 local terminal    = "alacritty"
 local fileManager = "thunar"
 local editor      = "codium"
 local zen         = "zen-browser"
 local floorp      = "floorp"
 -- pkill first, so a second press dismisses the launcher instead of stacking
--- another instance behind it
-local menu        = "pkill wofi || wofi --show drun"
+-- another instance behind it. The stylesheet is Quickshell's copy with the bar's
+-- corner radius applied (AppearanceSync.qml), falling back to the repo's own
+-- until the shell has written one.
+local menu        = "pkill wofi || { s=~/.local/state/neutrino/wofi.css; [ -r \"$s\" ] || s=~/.config/wofi/style.css; wofi --show drun --style \"$s\"; }"
+
+-- Animation Speed from the bar's Appearance page. Quickshell writes the choice
+-- to a state file and runs `hyprctl reload config-only`, which re-runs this
+-- file -- so the setting survives a restart without the repo's config being
+-- rewritten. "fast" halves every speed below (speed is a duration, so lower is
+-- quicker) and "off" turns animations off entirely.
+local function neutrinoState(name, default)
+    local f = io.open(os.getenv("HOME") .. "/.local/state/neutrino/" .. name)
+    if not f then return default end
+    local v = f:read("l")
+    f:close()
+    return v or default
+end
+local animMode   = neutrinoState("animations", "normal")
+local animFactor = animMode == "fast" and 0.5 or 1
+
+local function animation(t)
+    t.speed   = t.speed * animFactor
+    t.enabled = t.enabled and animMode ~= "off"
+    hl.animation(t)
+end
 
 ------------------
 ---- MONITORS ----
@@ -61,18 +83,55 @@ hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
 hl.env("XCURSOR_SIZE", "20")
 hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Classic")
 hl.env("HYPRCURSOR_SIZE", "20")
+-- Icon theme for Quickshell's window icons and Applications list. GTK and
+-- wofi get kora from gtk settings.ini, but Quickshell is Qt and Qt has no
+-- theme configured here, so without this it falls back to each app's stock
+-- hicolor icon (Thunar's hammer instead of kora's folder). It has to be in
+-- the environment at launch: Quickshell reads it before its own
+-- `//@ pragma Env` lines are applied, so setting it from shell.qml is ignored.
+hl.env("QS_ICON_THEME", "kora")
 
 -------------------
 ---- AUTOSTART ----
 -------------------
 
 hl.on("hyprland.start", function()
-    hl.exec_cmd("/usr/lib/polkit-kde-authentication-agent-1")
+    -- Not UWSM, so graphical-session.target is never reached on its own --
+    -- nothing here ever calls `systemctl --user start` on it, so anything
+    -- that relies purely on the target (rather than D-Bus activation) to
+    -- launch just sits enabled and dead for the whole session. That was
+    -- silently true of the polkit agent: this used to point at
+    -- /usr/lib/polkit-kde-authentication-agent-1, a KDE path that doesn't
+    -- exist on this system, so the exec failed instantly and quietly and
+    -- no agent ever ran -- any privileged action (mounting a drive, a
+    -- NetworkManager prompt) would hang waiting on a dialog that could
+    -- never appear. hyprpolkitagent is the one actually installed, and
+    -- it's already enabled against graphical-session.target, so starting
+    -- it here rather than execing the binary directly reuses that unit
+    -- (respawn-on-crash, proper cgroup) instead of running it bare.
+    --
+    -- reset-failed first, for when this runs after Hyprland has crashed and
+    -- been restarted by its watchdog. In the seconds with no compositor the
+    -- unit's Restart=on-failure respawns the agent into a missing Wayland
+    -- socket until systemd's start limit trips, and from then on a plain
+    -- `start` is refused ("Start request repeated too quickly") -- which left
+    -- the session with no polkit agent after a crash.
+    hl.exec_cmd("systemctl --user reset-failed hyprpolkitagent.service; systemctl --user start hyprpolkitagent.service")
+    -- Same trap as the polkit agent: hypridle's packaged unit hangs off
+    -- graphical-session.target, which never activates here, so it has to
+    -- be started by hand (reset-failed for the same crash-restart reason).
+    -- The fallback runs the binary bare if the unit ever goes missing,
+    -- rather than leaving the machine with no idle.
+    hl.exec_cmd("systemctl --user reset-failed hypridle.service; systemctl --user start hypridle.service || hypridle")
     hl.exec_cmd("quickshell")
     -- env alone does not retheme the cursor Hyprland draws over the desktop
     hl.exec_cmd("hyprctl setcursor Bibata-Modern-Classic 20")
-    -- picks a random wallpaper from wallpapers/ via swaybg
-    hl.exec_cmd("~/.config/hypr/random-wallpaper.sh")
+    -- the saved wallpaper, or a random one from wallpapers/ when shuffle is on
+    hl.exec_cmd("~/.config/hypr/wallpaper.sh")
+    -- A terminal waiting on workspace 2. The custom class is what scopes the
+    -- "send it to 2, silently" rule below to this one instance: matching on
+    -- Alacritty itself would banish every terminal you ever open.
+    hl.exec_cmd(terminal .. " --class neutrino-startup")
 end)
 
 -----------------------
@@ -81,9 +140,9 @@ end)
 
 hl.config({
     general = {
-        gaps_in     = 3,
-        gaps_out    = 6,
-        border_size = 1,
+        gaps_in     = 1,
+        gaps_out    = 0,
+        border_size = 0,
 
         col = {
             active_border   = "rgba(c2c2c266)",
@@ -120,7 +179,7 @@ hl.config({
     },
 
     animations = {
-        enabled = true,
+        enabled = animMode ~= "off",
     },
 
     dwindle = {
@@ -136,12 +195,20 @@ hl.config({
 hl.curve("neutrino", { type = "bezier", points = { {0.22, 1}, {0.36, 1} } })
 
 -- speed is in 100ms units (3 = 300ms), so lower is faster
-hl.animation({ leaf = "global",     enabled = true, speed = 3, bezier = "neutrino" })
-hl.animation({ leaf = "border",     enabled = true, speed = 3, bezier = "neutrino" })
-hl.animation({ leaf = "windows",    enabled = true, speed = 2, bezier = "neutrino", style = "popin 92%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.5, bezier = "neutrino", style = "popin 92%" })
-hl.animation({ leaf = "fade",       enabled = true, speed = 1.5, bezier = "neutrino" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 2, bezier = "neutrino", style = "slidefade 12%" })
+animation({ leaf = "global",     enabled = true, speed = 3, bezier = "neutrino" })
+animation({ leaf = "border",     enabled = true, speed = 3, bezier = "neutrino" })
+animation({ leaf = "windows",    enabled = true, speed = 2, bezier = "neutrino", style = "popin 92%" })
+animation({ leaf = "windowsOut", enabled = true, speed = 1.5, bezier = "neutrino", style = "popin 92%" })
+animation({ leaf = "fade",       enabled = true, speed = 1.5, bezier = "neutrino" })
+animation({ leaf = "workspaces", enabled = true, speed = 2, bezier = "neutrino", style = "slidefade 12%" })
+
+-- Layer surfaces: wofi, and the bar's flyouts. These inherit `global` unless
+-- set, so the launcher was taking the same 300ms a window does just to appear
+-- -- long enough to feel like a delay on something you open to type into.
+-- fade rather than popin: the bar is a layer too, and scaling it on every
+-- start looks wrong.
+animation({ leaf = "layersIn",  enabled = true, speed = 1, bezier = "neutrino", style = "fade" })
+animation({ leaf = "layersOut", enabled = true, speed = 1, bezier = "neutrino", style = "fade" })
 
 ---------------
 ---- INPUT ----
@@ -150,17 +217,18 @@ hl.animation({ leaf = "workspaces", enabled = true, speed = 2, bezier = "neutrin
 hl.config({
     input = {
         kb_layout     = "us",
-        follow_mouse  = 1,
+        follow_mouse  = 0,
         sensitivity   = 0.1,
         accel_profile = "adaptive",
 
         touchpad = {
             natural_scroll       = false,
             disable_while_typing = true,
-            scroll_factor        = 0.6,
+            scroll_factor        = 1,
             -- the .conf spelling is tap-to-click; the lua schema takes the
             -- underscored form, since dashes are not a bare Lua identifier
             tap_to_click         = true,
+            clickfinger_behavior = true,
         },
     },
 
@@ -182,9 +250,12 @@ hl.gesture({
 ---- KEYBINDINGS ----
 ---------------------
 
+-- Sections are marker comments, `-- --- Name ---`: the bar's Keybinds window
+-- groups binds by them and adds new ones to the end of the chosen section.
+
 local mod = "SUPER"
 
--- launchers
+-- --- Launchers ---
 hl.bind("CTRL + SPACE",      hl.dsp.exec_cmd(menu))
 hl.bind(mod .. " + Return",  hl.dsp.exec_cmd(terminal))
 hl.bind(mod .. " + A",       hl.dsp.exec_cmd(terminal))
@@ -193,7 +264,7 @@ hl.bind(mod .. " + V",       hl.dsp.exec_cmd(editor))
 hl.bind(mod .. " + Z",       hl.dsp.exec_cmd(zen))
 hl.bind(mod .. " + F",       hl.dsp.exec_cmd(floorp))
 
--- window management
+-- --- Window Management ---
 -- fullscreen and float sit on SHIFT, since plain F and V launch apps
 hl.bind(mod .. " + Q",         hl.dsp.window.close())
 -- Two different things, deliberately on separate binds:
@@ -208,7 +279,7 @@ hl.bind(mod .. " + SHIFT + E", hl.dsp.exit())
 hl.bind(mod .. " + P",         hl.dsp.window.pseudo())
 hl.bind(mod .. " + J",         hl.dsp.layout("togglesplit"))
 
--- focus
+-- --- Focus ---
 hl.bind(mod .. " + left",  hl.dsp.focus({ direction = "left" }))
 hl.bind(mod .. " + right", hl.dsp.focus({ direction = "right" }))
 hl.bind(mod .. " + up",    hl.dsp.focus({ direction = "up" }))
@@ -222,26 +293,27 @@ hl.bind(mod .. " + down",  hl.dsp.focus({ direction = "down" }))
 -- already full-screen -- no separate release handler needed.
 hl.bind("ALT + Tab", hl.dsp.exec_cmd("~/.config/hypr/alt-tab.sh"))
 
--- workspaces
+-- --- Workspaces ---
 for i = 1, 5 do
     hl.bind(mod .. " + " .. i,         hl.dsp.focus({ workspace = i }))
     hl.bind(mod .. " + SHIFT + " .. i, hl.dsp.window.move({ workspace = i }))
 end
 
--- mouse
+-- --- Mouse ---
 hl.bind(mod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
 hl.bind(mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 
--- screenshot
-hl.bind("Print", hl.dsp.exec_cmd([[grim -g "$(slurp)" - | wl-copy]]))
+-- --- Screenshot ---
+-- saves to ~/Pictures/Screenshots and copies to the clipboard
+hl.bind("Print", hl.dsp.exec_cmd("~/.config/hypr/screenshot.sh"))
 
--- laptop function keys
+-- --- Function Keys ---
 hl.bind("XF86AudioRaiseVolume",  hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
 hl.bind("XF86AudioLowerVolume",  hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
 hl.bind("XF86AudioMute",         hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true })
 hl.bind("XF86AudioMicMute",      hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true })
-hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd("brightnessctl -n1 set 5%+"),                     { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -n1 set 5%-"),                     { locked = true, repeating = true })
 
 ----------------------
 ---- WINDOW RULES ----
@@ -279,22 +351,56 @@ hl.window_rule({
     float = true,
 })
 
--- open maximized: browsers and the editor benefit most from the full
--- usable area, so skip the "resize it every time" step
+
+-- The startup terminal, parked on workspace 2. "silent" is the whole point:
+-- without it the window pulls the session onto workspace 2 as it opens, and
+-- you land in a terminal instead of an empty desktop.
 hl.window_rule({
-    name  = "maximize-floorp",
-    match = { class = "^(floorp)$" },
+    name  = "startup-terminal",
+    match = { class = "^(neutrino-startup)$" },
+    workspace = "2 silent",
+})
+
+-- Monocle. Hyprland ships dwindle and master only, with no monocle layout,
+-- so this emulates one: dwindle stays the underlying layout and every tiled
+-- window opens maximized, so one window is visible at a time and focus never
+-- resizes anything.
+--
+-- Global rather than local on purpose: layout-toggle.sh flips it through
+-- `hyprctl eval`, which shares this Lua state, and a local would be out of
+-- scope there.
+
+NeutrinoMonocleRule = hl.window_rule({
+    name  = "monocle",
+    match = { float = false },
     maximize = true,
 })
 
+-- The bar's standalone windows (System, Keybinds, Settings) are
+-- Quickshell FloatingWindows, class org.quickshell. They size themselves to
+-- their content, so they float at that size, centred on the focused monitor.
+--
+-- Two things here are load-bearing. maximize = false: the monocle rule
+-- matches `float = false`, and at map time these aren't floating *yet*, so
+-- it catches them too. And this rule has to come *after* the monocle rule:
+-- when two rules set the same property the later one wins, so above it,
+-- monocle's maximize = true overrides this and they float at full size.
 hl.window_rule({
-    name  = "maximize-zen",
-    match = { class = "^(zen)$" },
-    maximize = true,
+    name     = "quickshell-windows",
+    match    = { class = "^(org\\.quickshell)$" },
+    float    = true,
+    center   = true,
+    maximize = false,
 })
 
-hl.window_rule({
-    name  = "maximize-codium",
-    match = { class = "^(codium)$" },
-    maximize = true,
-})
+-- SUPER+M switches between monocle and dwindle. alt-tab.sh reads the same
+-- state, so in dwindle mode it only moves focus instead of maximizing.
+hl.bind(mod .. " + M", hl.dsp.exec_cmd("~/.config/hypr/layout-toggle.sh"))
+
+-- Closing a window in monocle mode leaves whatever gets focus next sized by
+-- the tiling underneath, which shows as the layout briefly "unfolding". This
+-- puts the survivor back to full. --settle because focus does not move until
+-- the closing window is actually gone.
+hl.on("window.close", function()
+    hl.exec_cmd("~/.config/hypr/maximize-focused.sh --settle")
+end)

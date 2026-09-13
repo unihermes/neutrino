@@ -20,8 +20,8 @@ cd neutrino
    command line
 6. Applies the boot speed fixes: vfat in the initramfs, iwd no longer blocking
    the greeter, and systemd's unused TPM setup masked
-7. Enables iwd, systemd-networkd, systemd-resolved, pipewire, and the ly
-   greeter
+7. Enables iwd, systemd-networkd, systemd-resolved, pipewire, bluetooth,
+   power-profiles-daemon, the Bluetooth pairing agent, and the ly greeter
 
 Every step is idempotent. `--needed` skips installed packages, `stow -R`
 restows cleanly, `enable --now` is a no-op on an already-running unit. Safe to
@@ -53,14 +53,16 @@ what you wrote.
 neutrino/
 ├── install.sh
 ├── link.sh              # dotfiles only, no packages or services
-├── fix-ly.sh            # diagnose and repair a greeter that will not start
-├── embolden-font.py     # rebuild ProggyVector at a different weight
+├── wallpapers/          # what wallpaper.sh picks from
 ├── packages/
 │   ├── pacman.txt        # native, one per line, # comments allowed
 │   └── aur.txt
 └── dotfiles/
-    ├── hypr/.config/hypr/hyprland.lua
-    ├── quickshell/.config/quickshell/shell.qml
+    ├── hypr/.config/hypr/       # hyprland.lua, hypridle, hyprlock, helper scripts
+    ├── quickshell/.config/quickshell/  # the bar, flyouts, Settings/System windows
+    ├── swaync/.config/swaync/{config.json,style.css}
+    ├── systemd/.config/systemd/user/   # bt-agent, wireplumber drop-in
+    ├── fastfetch/.config/fastfetch/
     ├── wofi/.config/wofi/{config,style.css}
     ├── nvim/.config/nvim/init.lua
     ├── alacritty/.config/alacritty/alacritty.toml
@@ -68,13 +70,13 @@ neutrino/
     ├── gtk/.config/gtk-3.0/settings.ini
     ├── gtk/.config/gtk-4.0/settings.ini
     ├── fontconfig/.config/fontconfig/fonts.conf
-    ├── fonts/.local/share/fonts/ProggyVector/{Regular,Bold}.ttf
+    ├── icons/.icons/default/index.theme   # cursor fallback
     ├── bash/.bashrc
-    └── starship/.config/starship.toml
+    └── starship/.config/{starship.toml,starship-path.sh}
 ```
 
-Each directory under `dotfiles/` mirrors its own path relative to `$HOME`, so
-`stow -t "$HOME" -R -- */` from inside `dotfiles/` links everything into place.
+Each directory under `dotfiles/` mirrors its own path relative to `$HOME`, and
+`link.sh` stows every one of them into place.
 Because they are symlinks, editing a config on the live system edits the repo.
 
 ## Starting a session
@@ -84,10 +86,10 @@ The Minimal archinstall profile ships no display manager, so this repo installs
 seizes a VT and would kill the install mid-run. Reboot and it greets you; pick
 Hyprland from the session list with the arrow keys.
 
-If ly never appears at boot, `./fix-ly.sh` works through the four causes in
-order -- not installed, wrong unit name, another display manager already
-owning `display-manager.service`, or a default boot target that never pulls a
-greeter in -- and prints what it found either way.
+If ly never appears at boot, check the usual causes: it isn't installed, the
+unit name is wrong (`ly@tty2.service` on ly 1.x), another display manager
+already owns `display-manager.service`, or the default boot target isn't
+`graphical.target`.
 
 If Hyprland dies you get dumped back at the greeter with no error shown. Switch
 to a TTY with `ctrl+alt+F3` and run it by hand to see what happened:
@@ -156,23 +158,12 @@ compiler output and `ls`. The `[colors.normal]` and `[colors.bright]` blocks in
 nvim carries its own scheme in `init.lua` rather than pulling a plugin, so
 there is nothing to install and nothing to keep in sync.
 
-Fonts are Ubuntu Nerd Font for sans-serif, serif and UI text, and ProggyVector
-for monospace. `fonts.conf` falls back to UbuntuMono Nerd Font for the icon
-glyphs ProggyVector lacks. The ProggyVector in `dotfiles/fonts` is not the
-upstream file: its outlines are thickened slightly (Regular +18 units at 1024
-upem) and there is a real Bold (+56). Upstream only ships Regular, and
-fontconfig's synthetic bold has a single fixed strength. To change the weight,
-start from the upstream `ProggyVector-Regular.ttf` from
-[bluescan/proggyfonts](https://github.com/bluescan/proggyfonts):
-
-```bash
-./embolden-font.py ProggyVector-Regular.ttf dotfiles/fonts/.local/share/fonts/ProggyVector/ProggyVector-Regular.ttf 18 Regular 400
-./embolden-font.py ProggyVector-Regular.ttf dotfiles/fonts/.local/share/fonts/ProggyVector/ProggyVector-Bold.ttf    56 Bold    700
-fc-cache -f
-```
-
-Do not also install `ttf-proggy-vector` from the AUR, or fontconfig sees two
-Regular faces with the same name and picks either.
+Fonts are Ubuntu Nerd Font for sans-serif, serif and UI text, and UbuntuMono
+Nerd Font for everything monospace: terminals, the editor, the bar and its
+flyouts, wofi and notifications. One font that owns every glyph, icons and
+powerline caps included, means nothing is drawn by fallback at another
+font's metrics. Alacritty and the editor use the "Nerd Font Mono" variant,
+which holds every glyph to one cell; the bar uses the proportional one.
 
 ## Regenerating the package lists
 

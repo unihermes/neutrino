@@ -8,11 +8,14 @@ decorations = "none"
 dynamic_padding = true
 
 [font]
-size = 14.0
-# ProggyVector comes from dotfiles/fonts, emboldened by embolden-font.py.
-# There is no italic face, so italic is synthesized from Regular.
-normal = { family = "ProggyVector", style = "Regular" }
-bold   = { family = "ProggyVector", style = "Bold" }
+size = 12.0
+# UbuntuMono Nerd Font owns every glyph the prompt uses, powerline caps
+# included, so nothing is drawn by fallback at another font's metrics. The
+# "Mono" variant keeps every glyph to one terminal cell, which is what a grid
+# of characters wants.
+normal = { family = "UbuntuMono Nerd Font Mono", style = "Regular" }
+bold   = { family = "UbuntuMono Nerd Font Mono", style = "Bold" }
+italic = { family = "UbuntuMono Nerd Font Mono", style = "Italic" }
 
 [cursor]
 # Beam, not Block: a thin vertical bar sitting between characters rather than a

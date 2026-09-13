@@ -3,13 +3,15 @@
 
 show=drun
 prompt=
-width=520
-height=400
-lines=8
+# Compact, at roughly flyout scale: rows about the height of the bar's flyout
+# rows rather than a full-screen launcher. height has to grow with the font:
+# wofi does not shrink to fit, so too small a value just clips the last row.
+width=680
+height=330
 location=center
 insensitive=true
 allow_images=true
-image_size=20
+image_size=24
 no_actions=true
 hide_scroll=true
 gtk_dark=true

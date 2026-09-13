@@ -7,36 +7,45 @@
 #   #0b0b0b base   #121212 bar    #1a1a1a surface  #242424 overlay
 #   #303030 border #4d4d4d muted  #7a7a7a subtext  #c2c2c2 text
 #   #ebebeb bright
+#
+# Two lines: the path on its own, then the prompt character. Nothing else
+# shares the path's line -- git state in particular is deliberately absent.
+
+# Starship prepends a blank line to every prompt unless told not to, which is
+# the gap that shows up between fastfetch's output and the first prompt.
+add_newline = true
 
 format = """
-$directory\
-$git_branch\
-$git_status\
-$line_break\
+[](fg:overlay)${custom.path}[](fg:overlay)
 $character"""
 
 palette = "neutrino"
 
 [palettes.neutrino]
+overlay = "#242424"
 muted   = "#4d4d4d"
 subtext = "#7a7a7a"
 text    = "#c2c2c2"
 bright  = "#ebebeb"
 
+# The path is drawn by custom.path, not this module: starship's directory
+# has one style for the whole string, and the point here is a different
+# shade per segment. Left disabled rather than deleted so it's obvious the
+# omission is deliberate.
 [directory]
-style = "bold bright"
-format = "[$path]($style) "
-truncation_length = 0
-truncate_to_repo = false
+disabled = true
 
-[git_branch]
-style = "subtext"
-symbol = " "
-format = "[$symbol$branch]($style) "
-
-[git_status]
-style = "muted"
-format = "[$all_status$ahead_behind]($style) "
+# Rounded caps (U+E0B6/U+E0B4) sit either side, coloured fg:overlay against
+# the terminal's own background so they read as the ends of the block. They
+# need a Nerd Font with the rounded powerline glyphs, which UbuntuMono has.
+[custom.path]
+command = "~/.config/starship-path.sh"
+when = true
+shell = ["bash", "--noprofile", "--norc"]
+# no style bracket: the script emits its own per-segment SGR, and wrapping it
+# would let starship's reset cut the background out from under it
+format = "$output"
+style = ""
 
 [character]
 success_symbol = "[❯](text)"

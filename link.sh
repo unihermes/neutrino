@@ -13,6 +13,12 @@ command -v stow &>/dev/null || die "stow is not installed: sudo pacman -S stow"
 [[ -d dotfiles ]] || die "no dotfiles/ directory next to this script"
 
 mkdir -p "$HOME/.config"
+# systemd does not follow a drop-in *directory* that is itself a symlink, and
+# stow links a whole directory whenever the target doesn't exist yet. Creating
+# it first means stow links the .conf inside it instead, which systemd does
+# read. Without this the wireplumber/bluez ordering drop-in is silently
+# ignored on a fresh machine.
+mkdir -p "$HOME/.config/systemd/user/wireplumber.service.d"
 
 # Enumerate the packages explicitly rather than passing a `*/` glob. Two traps
 # there: stow collects package names during option parsing, so a `--` before

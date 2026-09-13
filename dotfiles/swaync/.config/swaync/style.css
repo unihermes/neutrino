@@ -1,0 +1,263 @@
+/* Neutrino - swaync
+ * ~/.config/swaync/style.css
+ *
+ * Popups and the notification panel, dressed as bar flyouts: the #141414
+ * ground, a 1px #303030 outer stroke with a #4d4d4d stroke inset inside it,
+ * no shadows, UbuntuMono, and the same grayscale ramp:
+ *   #0b0b0b base   #121212 bar    #1a1a1a surface  #242424 overlay
+ *   #303030 border #4d4d4d muted  #7a7a7a subtext  #c2c2c2 text
+ *   #ebebeb bright #a87676 alert
+ *
+ * swaync loads its stock /etc/xdg sheet first and this one over it, so this
+ * only restyles -- layout still comes from the stock sheet.
+ *
+ * The inner stroke is two inset box-shadows rather than a second element:
+ * a 2px ring in the ground colour, then a 3px one in #4d4d4d beneath it, so
+ * only the outer pixel of the lower ring shows -- landing it 3px in, where
+ * the flyout's inner Rectangle sits.
+ *
+ * Corner radius, the palette and font sizes come from the bar's Appearance
+ * page via swaync.css, which Quickshell writes (AppearanceSync.qml): --n-<role>
+ * for each ramp colour, which is the wallpaper's tone for that role in
+ * wallpaper mode. The var() fallbacks are the grayscale defaults, for before
+ * the shell has written it. Only the alert hue stays fixed. */
+
+@import url("../../.local/state/neutrino/swaync.css");
+
+:root {
+  --cc-bg: var(--n-panel, #141414);
+  --noti-border-color: var(--n-border, #303030);
+  --noti-bg-alpha: 1;
+  --noti-bg-darker: var(--n-base, #0b0b0b);
+  --noti-bg-hover: var(--n-overlay, #242424);
+  --noti-bg-focus: var(--n-surface, #1a1a1a);
+  --noti-close-bg: transparent;
+  --noti-close-bg-hover: var(--n-overlay, #242424);
+  --text-color: var(--n-text, #c2c2c2);
+  --text-color-disabled: var(--n-muted, #4d4d4d);
+  --bg-selected: var(--n-subtext, #7a7a7a);
+  --border: 1px solid var(--n-border, #303030);
+  --border-radius: var(--neutrino-radius, 6px);
+  --notification-shadow: none;
+  --notification-icon-size: 40px;
+  --notification-group-icon-size: 20px;
+  --font-size-body: var(--n-fs-body, 13px);
+  --font-size-summary: var(--n-fs-summary, 13px);
+
+  --double-border: inset 0 0 0 2px var(--n-panel, #141414), inset 0 0 0 3px var(--n-muted, #4d4d4d);
+  --r-inner: var(--neutrino-radius-inner, 4px);
+}
+
+* {
+  font-family: "UbuntuMono Nerd Font", monospace;
+  text-shadow: none;
+  -gtk-icon-shadow: none;
+}
+
+/* --- popup / panel card --------------------------------------------- */
+
+.floating-notifications .notification-row .notification-background {
+  /* the flyouts' 6px edge margin, and 6px between stacked popups */
+  padding: 6px 6px 0 6px;
+}
+
+.notification-row .notification-background .notification {
+  background: var(--n-panel, #141414);
+  border: 1px solid var(--n-border, #303030);
+  box-shadow: var(--double-border);
+  /* clear of the inner stroke, so hover fills don't paint over it */
+  padding: 4px;
+}
+
+/* critical: the outer stroke takes the alert hue, the same way the bar's
+ * privacy and failed-units modules are the only coloured things on it */
+.notification-row .notification-background .notification.critical {
+  border-color: #a87676;
+}
+
+.notification-row .notification-background .notification .notification-default-action {
+  border-radius: var(--r-inner);
+  padding: 6px 8px;
+}
+
+.notification-row .notification-background .notification .notification-default-action:hover {
+  background: var(--n-overlay, #242424);
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .image {
+  border-radius: var(--r-inner);
+  margin: 2px 10px 2px 0;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .app-icon {
+  margin: 4px;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .summary {
+  color: var(--n-bright, #ebebeb);
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .time {
+  color: var(--n-subtext, #7a7a7a);
+  font-size: var(--n-fs-small, 11px);
+  font-weight: normal;
+  margin-right: 28px;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .body {
+  color: var(--n-text, #c2c2c2);
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .body-image {
+  background-color: transparent;
+  border-radius: var(--r-inner);
+}
+
+/* same track as the media flyout's progress bar */
+.notification-row .notification-background .notification progressbar trough {
+  background: var(--n-base, #0b0b0b);
+  border: 1px solid var(--n-surface, #1a1a1a);
+  border-radius: 3px;
+  min-height: 6px;
+}
+
+.notification-row .notification-background .notification progressbar progress {
+  background: var(--n-text, #c2c2c2);
+  border-radius: 3px;
+  min-height: 6px;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .inline-reply .inline-reply-entry {
+  background: var(--n-surface, #1a1a1a);
+  border: 1px solid var(--n-border, #303030);
+  border-radius: var(--r-inner);
+}
+
+/* --- buttons: bar chips ---------------------------------------------- */
+
+.close-button {
+  background: transparent;
+  color: var(--n-subtext, #7a7a7a);
+  border: 1px solid var(--n-border, #303030);
+  border-radius: var(--r-inner);
+  min-width: 20px;
+  min-height: 20px;
+  margin-top: 10px;
+  margin-right: 10px;
+}
+
+.close-button:hover {
+  background: var(--n-overlay, #242424);
+  color: var(--n-bright, #ebebeb);
+  border: 1px solid var(--n-subtext, #7a7a7a);
+}
+
+.notification-row .notification-background .notification .notification-alt-actions {
+  padding: 2px 0 0 0;
+}
+
+.notification-row .notification-background .notification .notification-action {
+  margin: 2px;
+}
+
+.notification-row .notification-background .notification .notification-action > button,
+.notification-row .notification-background .notification .notification-default-action .notification-content .inline-reply .inline-reply-button,
+.widget-title > button {
+  background: transparent;
+  color: var(--n-text, #c2c2c2);
+  border: 1px solid var(--n-border, #303030);
+  border-radius: var(--r-inner);
+  box-shadow: none;
+  padding: 4px 10px;
+}
+
+.notification-row .notification-background .notification .notification-action > button:hover,
+.notification-row .notification-background .notification .notification-default-action .notification-content .inline-reply .inline-reply-button:hover,
+.widget-title > button:hover {
+  background: var(--n-overlay, #242424);
+  color: var(--n-bright, #ebebeb);
+  border-color: var(--n-subtext, #7a7a7a);
+}
+
+/* --- groups ---------------------------------------------------------- */
+
+.notification-group .notification-group-headers,
+.notification-group .notification-group-headers .notification-group-header,
+.notification-group .notification-group-headers .notification-group-icon {
+  color: var(--n-subtext, #7a7a7a);
+}
+
+.notification-group:focus,
+.notification-row:focus {
+  background: transparent;
+}
+
+/* --- control centre: a tall flyout ---------------------------------- */
+
+.control-center {
+  background: var(--n-panel, #141414);
+  border: 1px solid var(--n-border, #303030);
+  box-shadow: var(--double-border);
+  padding: 4px;
+}
+
+.control-center .control-center-list .notification-row .notification-background {
+  padding: 3px 6px;
+}
+
+.control-center .control-center-list-placeholder {
+  color: var(--n-muted, #4d4d4d);
+  opacity: 1;
+}
+
+.widget {
+  margin: 6px 10px 2px 10px;
+  padding: 0;
+}
+
+/* FlyoutHeading: small bold caps with a letter-spaced label */
+.widget-title > label {
+  color: var(--n-bright, #ebebeb);
+  font-size: var(--n-fs-small, 11px);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.widget-title > button {
+  font-size: var(--n-fs-small, 11px);
+  padding: 2px 8px;
+}
+
+.widget-dnd {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--n-border, #303030);
+}
+
+.widget-dnd label {
+  color: var(--n-text, #c2c2c2);
+  font-size: var(--n-fs-label, 13px);
+}
+
+/* FlyoutAction's switch */
+.widget-dnd switch {
+  background: var(--n-base, #0b0b0b);
+  border: 1px solid var(--n-border, #303030);
+  border-radius: var(--r-inner);
+  box-shadow: none;
+}
+
+.widget-dnd switch:checked {
+  background: var(--n-text, #c2c2c2);
+  border-color: var(--n-text, #c2c2c2);
+}
+
+.widget-dnd switch slider {
+  background: var(--n-muted, #4d4d4d);
+  border: none;
+  border-radius: var(--r-inner);
+  box-shadow: none;
+}
+
+.widget-dnd switch:checked slider {
+  background: var(--n-panel, #141414);
+}

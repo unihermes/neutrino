@@ -1,0 +1,27 @@
+# Neutrino - BlueZ pairing agent
+#
+# BlueZ will not complete a pairing without an agent registered on the bus to
+# answer its confirmation request; without one it fails with
+#
+#   src/device.c:new_auth() No agent available for request type 2
+#
+# bluetoothctl registers one only for the lifetime of an *interactive* session,
+# so a one-shot `bluetoothctl pair` doesn't help, and Quickshell registers none
+# at all. This keeps one running for the session, which makes the bar's native
+# pair() work and also lets devices initiate pairing themselves.
+#
+# NoInputNoOutput = "just works" pairing: a laptop has no keypad to type a
+# headset's passkey into, and this capability tells BlueZ to auto-accept
+# rather than wait for input that can never arrive.
+[Unit]
+Description=BlueZ pairing agent
+After=bluetooth.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bt-agent -c NoInputNoOutput
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

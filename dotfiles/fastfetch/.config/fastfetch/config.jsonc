@@ -1,0 +1,122 @@
+// Neutrino - Fastfetch
+// ~/.config/fastfetch/config.jsonc
+//
+// Same grayscale ramp as the rest of the repo -- no hues, emphasis is
+// lightness and weight instead.
+//   #4d4d4d muted  #7a7a7a subtext  #c2c2c2 text  #ebebeb bright
+//
+// A fully closed box (not just a left border) drawn with box-drawing
+// characters around the info block. Every data line is a "command" module
+// running row.sh, which reuses fastfetch's own detection for the value and
+// pads it so the closing border lines up. display.separator is "" because
+// all spacing is done by hand so the padding math stays exact.
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "display": {
+    "separator": ""
+  },
+  "logo": {
+    "type": "data",
+    "padding": { "right": 0 },
+    "source": "\u001b[38;2;235;235;235m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠖⠃⠀⠀⠀⡁⠀⠀⠀⠀⠀⠐⠆⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⢔⡤⠊⠁⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠁⠀⠀⠘⠁⢀⠀⠀⠀⠀⢈⠓⠂⠠⡄⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣶⠿⠞⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠒⠁⠀⠠⡚⠁⢀⣙⣀⣈⡩⠬⢁⠀⢑⠶⠤⡆⠤⡀⠀⠀⠀⠀⠀⠀⢀⠴⢲⣋⣽⣷⠟⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⢠⠀⠀⣶⠃⠗⣡⣶⣮⣿⡿⠿⠿⢿⣿⣷⣶⣤⣤⠤⠴⠦⠬⣤⣤⠄⣉⠉⠝⢲⣿⡷⠻⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠁⡀⡸⠁⣰⣿⡿⠛⠋⣁⡀⠤⠤⢄⡀⠈⠛⢯⣿⣟⣾⣶⣶⣮⣭⣵⣾⣿⣟⠿⠉⢨⠖⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠀⢠⠳⡧⣻⡿⠋⢀⠒⠉⠀⠀⠀⠀⠀⠀⠉⠢⠀⠀⠙⠛⣻⣿⣿⣿⢿⣿⣿⠟⡱⠖⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⢠⣧⠓⣾⣿⠁⠀⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⢦⣠⣾⣿⠿⣿⣿⣿⡿⣫⠏⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠂⢃⣸⣿⠇⢠⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣴⣿⠟⢿⠁⠸⡿⣿⣯⡶⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⢘⡄⠘⣿⣿⠀⠸⡀⠀⠀⠀⠀⠀⢀⣀⣴⣾⣿⡿⡟⡋⠐⡇⠀⢸⣿⣿⠃⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢡⠘⢰⣿⡿⡆⠀⣇⠀⣀⣠⣤⣶⣿⢷⢟⠻⠀⠈⠀⠀⠀⡇⠀⣼⣿⣿⠂⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⢀⡴⢯⣾⠟⡏⢀⣠⣿⣿⣿⣟⢟⡋⠅⠘⠉⠀⠀⠀⠀⢀⠀⠁⢠⣿⣟⠃⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠞⣻⣷⡿⢙⣩⣶⡿⠿⠛⠉⠑⢡⡁⠀⠀⠀⠀⠀⠀⢀⠔⠁⠀⣰⣿⣿⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣡⣾⣥⣾⢫⡦⠾⠛⠙⠉⠀⠀⢀⣀⠀⠈⠙⠓⠦⠤⠤⠀⠘⠁⢀⡤⣾⡿⠏⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠔⣴⣾⣿⣿⢟⢝⠢⠃⢀⣤⢴⣾⣮⣷⣶⢿⣶⡤⣐⡀⠀⣠⣤⢶⣪⣿⣿⡿⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⡀⣦⣾⡿⡛⠵⠺⢈⡠⠶⠿⠥⠥⡭⠉⠉⢱⡛⠻⠿⣿⣿⣿⣿⣿⠿⠿⠿⠟⠭⠛⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⢀⢴⠕⣋⠝⠕⠐⠀⠔⠉⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠁⠉⠁⠁⠁⠁⠈⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⢀⣠⠁⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\u001b[0m"
+  },
+  "modules": [
+    {
+      "type": "command",
+      "key": " ",
+      "text": "u=$(whoami); h=$(uname -n); title=\"$u@$h\"; dash=$(( 66 - 5 - ${#title} )); (( dash<0 )) && dash=0; d=$(printf -- '─%.0s' $(seq 1 \"$dash\")); printf '\\033[38;2;77;77;77m╭─ \\033[1;38;2;235;235;235m%s\\033[38;2;77;77;77m \\033[0m\\033[38;2;77;77;77m%s╮\\033[0m' \"$title\" \"$d\""
+    },
+
+    { "type": "custom", "format": "\u001b[38;2;77;77;77m├─ HARDWARE ─────────────────────────────────────────────────────┤\u001b[0m" },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh CPU"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh GPU"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh Memory"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh Disk"
+    },
+
+    { "type": "custom", "format": "\u001b[38;2;77;77;77m├─ SOFTWARE ─────────────────────────────────────────────────────┤\u001b[0m" },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh OS"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh Kernel"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh Shell"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh WM"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh Terminal"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh Icons"
+    },
+
+    { "type": "custom", "format": "\u001b[38;2;77;77;77m├─ SYSTEM ───────────────────────────────────────────────────────┤\u001b[0m" },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh Uptime"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh Packages"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh Processes"
+    },
+
+    {
+      "type": "command",
+      "key": "\u001b[38;2;77;77;77m│ \u001b[0m",
+      "text": ". ~/.config/fastfetch/row.sh Age \"$(( ($(date +%s) - $(stat -c %W /)) / 86400 )) days\""
+    },
+
+    { "type": "custom", "format": "\u001b[38;2;77;77;77m╰────────────────────────────────────────────────────────────────╯\u001b[0m" }
+  ]
+}

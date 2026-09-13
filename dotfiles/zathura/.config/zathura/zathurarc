@@ -1,7 +1,7 @@
 # Neutrino - zathura
 # ~/.config/zathura/zathurarc
 
-set font "ProggyVector 11"
+set font "UbuntuMono Nerd Font 11"
 set selection-clipboard clipboard
 set adjust-open width
 set guioptions ""

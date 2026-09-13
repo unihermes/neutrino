@@ -11,21 +11,14 @@ quickshell-git
 # want the Microsoft extension marketplace instead of Open VSX.
 vscodium-bin
 
-# Claude Code CLI. Verify the name on the real system first:
-#   yay -Ss claude-code
-# If neither claude-code nor claude-code-bin is there, drop this line and use
-# the official installer instead:
-#   curl -fsSL https://claude.ai/install.sh | bash
+# Claude Code CLI
 claude-code
 zen-browser-bin
 floorp-bin
 kora-icon-theme
 
 # cursor. -bin is the prebuilt theme; plain bibata-cursor-theme renders every
-# cursor from SVG with clickgen and takes a long time. Confirm the exact name
-# and which variants it ships before trusting this:
-#   yay -Ss bibata
-#   ls /usr/share/icons | grep -i bibata
+# cursor from SVG with clickgen and takes a long time.
 bibata-cursor-theme-bin
 
 # apps
